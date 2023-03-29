@@ -1,14 +1,14 @@
 // ==UserScript==
-// @name         Emby danmaku extension
-// @description  Emby弹幕插件
+// @name         Jellyfin danmaku extension
+// @description  Jellyfin弹幕插件
 // @namespace    https://github.com/RyoLee
 // @author       RyoLee
 // @version      1.10
 // @copyright    2022, RyoLee (https://github.com/RyoLee)
-// @license      MIT; https://raw.githubusercontent.com/RyoLee/emby-danmaku/master/LICENSE
+// @license      MIT; https://raw.githubusercontent.com/Izumiko/jellyfin-danmaku/jellyfin/LICENSE
 // @icon         https://github.githubassets.com/pinned-octocat.svg
-// @updateURL    https://cdn.jsdelivr.net/gh/RyoLee/emby-danmaku@gh-pages/ede.user.js
-// @downloadURL  https://cdn.jsdelivr.net/gh/RyoLee/emby-danmaku@gh-pages/ede.user.js
+// @updateURL    https://cdn.jsdelivr.net/gh/Izumiko/jellyfin-danmaku@jellyfin/ede.js
+// @downloadURL  https://cdn.jsdelivr.net/gh/Izumiko/jellyfin-danmaku@jellyfin/ede.js
 // @resource     MDICON_CSS https://fonts.googleapis.com/icon?family=Material+Icons
 // @grant        GM_getResourceText
 // @grant        GM_addStyle
@@ -21,8 +21,11 @@
     'use strict';
     if (document.querySelector('meta[name="application-name"]').content == 'Jellyfin') {
         // ------ configs start------
-        const api_key = ''; // 填写Jellyfin账号的API key，用于获取视频信息
-        const sessionUrl = window.location.origin + window.location.pathname.replace('/web/index.html', '') + "/Sessions?activeWithinSeconds=90&api_key=" + api_key;
+        const deviceId = localStorage.getItem('_deviceId2');
+        const serversInfo = JSON.parse(localStorage.getItem('jellyfin_credentials')).Servers;
+        var token = '';
+        var userId = '';
+        const baseUrl = window.location.origin + window.location.pathname.replace('/web/index.html', '');
         const check_interval = 200;
         const chConverTtitle = ['当前状态: 未启用', '当前状态: 转换为简体', '当前状态: 转换为繁体'];
         // 0:当前状态关闭 1:当前状态打开
@@ -272,56 +275,31 @@
 
 
         async function getEmbyItemInfo() {
-            if (api_key.length > 0) {
-                let sessionInfo = await fetch(sessionUrl).then(res => res.json());
-                var playingInfo = null;
-                sessionInfo.forEach(data => {
-                    let deltaTime = Date.now() - Date.parse(data.LastActivityDate);
-                    if (deltaTime < 30000 && data.NowPlayingItem) {
-                        playingInfo = data.NowPlayingItem;
-                    }
-                });
+            if (token.length > 0 && userId.length > 0) {
+                let sessionUrl = baseUrl + '/Sessions?ControllableByUserId=' + userId + '&deviceId=' + deviceId;
+                let sessionInfo = await fetch(sessionUrl, {
+                    "credentials": "include",
+                    "headers": {
+                        "Accept": "application/json",
+                        "X-MediaBrowser-Token": token
+                    },
+                    "method": "GET",
+                    "mode": "cors"
+                }).then(res => res.json());
+                var playingInfo = sessionInfo[0].NowPlayingItem;
                 return playingInfo;
             } else {
                 while (!document.querySelector(".htmlvideoplayer")) {
                     await new Promise((resolve) => setTimeout(resolve, 200));
                 }
-                try {
-                    console.log('获取番剧信息');
-                    let title = document.title;
-                    let pagetitle = document.querySelector("h3[class='pageTitle']").innerText;
-                    if (title == pagetitle) {
-                        let src = document.querySelector('.htmlvideoplayer').src;
-                        let _id = /.*Videos\/(\w*)\/stream/gi.exec(src) || /.*\/([\w-]*)/gi.exec(src);
-                        return { Id: _id[1], Name: title };
+                let srvInfo = await fetch(baseUrl + '/System/Info/Public').then(res => res.json());
+                let serverId = srvInfo.Id;
+                serversInfo.forEach(data => {
+                    if (data.Id == serverId) {
+                        token = data.AccessToken;
+                        userId = data.UserId;
                     }
-                    var season = /S([0-9]*)/gi.exec(pagetitle);
-                    var episode = /E([0-9]*)/gi.exec(pagetitle);
-                    if (season != null && episode != null) {
-                        var s = season[1];
-                        var e = episode[1];
-                        let sid = null;
-                        let _id = null;
-                        try {
-                            document.querySelectorAll('.btnPlaystate').forEach(function (item) {
-                                if (item.getAttribute('data-type') == 'Season') sid = item.getAttribute('data-id');
-                            });
-                        } catch (e) {
-                            console.log('获取seasonid 失败 ' + e);
-                        }
-                        if (sid == null) {
-                            let src = document.querySelector('.htmlvideoplayer').poster;
-                            let i = /.*Items\/(\w*)\/Images/gi.exec(src);
-                            _id = i[1];
-                        } else {
-                            _id = sid;
-                        }
-                        return { SeasonId: _id, Type: 'Episode', SeriesName: title, ParentIndexNumber: s, IndexNumber: e };
-                    }
-                } catch (err) {
-                    console.log('还没加载好' + err);
-                    return null;
-                }
+                });
             }
         }
 
@@ -396,7 +374,7 @@
                 });
             if (animaInfo.animes.length == 0) {
                 console.log('弹幕查询无结果');
-                alert('弹幕查询无结果');
+                //alert('弹幕查询无结果');
                 return null;
             }
             console.log('查询成功');
