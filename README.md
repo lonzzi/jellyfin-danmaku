@@ -1,7 +1,7 @@
-# emby-danmaku
+# jellyfin-danmaku
 
-## Emby danmaku extension
-![截图](https://raw.githubusercontent.com/RyoLee/emby-danmaku/res/S0.png)
+## Jellyfin danmaku extension
+![截图](https://raw.githubusercontent.com/RyoLee/dd-danmaku/res/S0.png)
 
 ## 安装
 
@@ -10,15 +10,22 @@
 ### 浏览器插件(推荐)
 
 1. [Tampermonkey](https://www.tampermonkey.net/)
-2. [添加脚本](https://cdn.jsdelivr.net/gh/RyoLee/emby-danmaku@gh-pages/ede.user.js)
+2. [添加脚本](https://cdn.jsdelivr.net/gh/Izumiko/jellyfin-danmaku@gh-pages/ede.user.js)
 
 ### 修改服务端
 
-修改文件 /system/dashboard-ui/index.html (Docker版,其他类似),在`</body>`前添加如下标签
+修改文件 `/jellyfin/jellyfin-web/index.html` (Docker版,其他类似,比如Debian下是`/usr/share/jellyfin/web/index.html`),在`</body>`前添加如下标签
 
+```html
+<script src="https://cdn.jsdelivr.net/gh/Izumiko/jellyfin-danmaku@gh-pages/ede.user.js" defer></script>
 ```
-<script src="https://cdn.jsdelivr.net/gh/RyoLee/emby-danmaku@gh-pages/ede.user.js" defer></script>
+
+Docker中的操作方式为，用root进入容器终端后，运行以下命令
+
+```bash
+sed -i 's#</body>#<script src="https://cdn.jsdelivr.net/gh/Izumiko/jellyfin-danmaku@gh-pages/ede.user.js" defer></script></body>#' /jellyfin/jellyfin-web/index.html
 ```
+
 该方式安装与浏览器插件安装**可同时使用不冲突**
 
 ### 修改客户端
@@ -56,4 +63,4 @@
 **首次播放时请检查当前弹幕信息是否正确匹配,若匹配错误请尝试手动匹配**
 
 
-[![Stargazers over time](https://starchart.cc/RyoLee/emby-danmaku.svg)](https://starchart.cc/RyoLee/emby-danmaku)
+[![Stargazers over time](https://starchart.cc/Izumiko/jellyfin-danmaku.svg)](https://starchart.cc/Izumiko/jellyfin-danmaku)

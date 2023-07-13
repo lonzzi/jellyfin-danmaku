@@ -2,22 +2,22 @@ name: DEPLOY
 on:
   pull_request:
     branches:
-    - master
+    - jellyfin
     paths:
     - "ede.js"
   push:
     branches:
-    - master
+    - jellyfin
     paths:
     - "ede.js"
   workflow_dispatch:
 jobs:
   release:
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/master'
+    if: github.ref == 'refs/heads/jellyfin'
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         fetch-depth: 0
     - name: Pack
@@ -33,5 +33,5 @@ jobs:
         keep_files: true
     - name: Purge CDN cache
       run: |
-        curl https://purge.jsdelivr.net/gh/RyoLee/emby-danmaku/ede.js
-        curl https://purge.jsdelivr.net/gh/RyoLee/emby-danmaku@gh-pages/ede.user.js
+        curl https://purge.jsdelivr.net/gh/Izumiko/jellyfin-danmaku@jellyfin/ede.js
+        curl https://purge.jsdelivr.net/gh/Izumiko/jellyfin-danmaku@gh-pages/ede.user.js
