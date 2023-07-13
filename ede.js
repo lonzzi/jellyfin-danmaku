@@ -7,11 +7,8 @@
 // @copyright    2022, RyoLee (https://github.com/RyoLee)
 // @license      MIT; https://raw.githubusercontent.com/Izumiko/jellyfin-danmaku/jellyfin/LICENSE
 // @icon         https://github.githubassets.com/pinned-octocat.svg
-// @updateURL    https://cdn.jsdelivr.net/gh/Izumiko/jellyfin-danmaku@jellyfin/ede.js
-// @downloadURL  https://cdn.jsdelivr.net/gh/Izumiko/jellyfin-danmaku@jellyfin/ede.js
-// @resource     MDICON_CSS https://fonts.googleapis.com/icon?family=Material+Icons
-// @grant        GM_getResourceText
-// @grant        GM_addStyle
+// @updateURL    https://cdn.jsdelivr.net/gh/Izumiko/jellyfin-danmaku@gh-pages/ede.user.js
+// @downloadURL  https://cdn.jsdelivr.net/gh/Izumiko/jellyfin-danmaku@gh-pages/ede.user.js
 // @grant        GM_xmlhttpRequest
 // @connect      *
 // @match        *://*/*/web/index.html
@@ -31,23 +28,25 @@
         const check_interval = 200;
         const chConverTtitle = ['当前状态: 未启用', '当前状态: 转换为简体', '当前状态: 转换为繁体'];
         // 0:当前状态关闭 1:当前状态打开
-        const danmaku_icons = ['\uE0B9', '\uE7A2'];
-        const search_icon = '\uE881';
-        const translate_icon = '\uE927';
-        const info_icon = '\uE0E0';
-        const filter_icons = ['\uE3E0', '\uE3D0', '\uE3D1', '\uE3D2'];
+        const danmaku_icons = ['comment', 'comments_disabled'];
+        const search_icon = 'find_replace';
+        const translate_icon = 'g_translate';
+        const info_icon = 'import_contacts';
+        const filter_icons = ['filter_none', 'filter_1', 'filter_2', 'filter_3'];
+        const spanClass = 'xlargePaperIconButton material-icons ';
         const buttonOptions = {
             class: 'paper-icon-button-light',
             is: 'paper-icon-button-light',
         };
-        // const uiAnchorStr = '\uE034';
+        const uiAnchorStr = 'pause';
         const uiQueryStr = '.osdTimeText';
         const mediaContainerQueryStr = "div[data-type='video-osd']";
         const mediaQueryStr = 'video';
         const displayButtonOpts = {
             title: '弹幕开关',
             id: 'displayDanmaku',
-            innerText: null,
+            //innerText: null,
+            class: '',
             onclick: () => {
                 if (window.ede.loading) {
                     console.log('正在加载,请稍后再试');
@@ -56,7 +55,7 @@
                 console.log('切换弹幕开关');
                 window.ede.danmakuSwitch = (window.ede.danmakuSwitch + 1) % 2;
                 window.localStorage.setItem('danmakuSwitch', window.ede.danmakuSwitch);
-                document.querySelector('#displayDanmaku').children[0].innerText = danmaku_icons[window.ede.danmakuSwitch];
+                document.querySelector('#displayDanmaku').children[0].className = spanClass + danmaku_icons[window.ede.danmakuSwitch];
                 if (window.ede.danmaku) {
                     window.ede.danmakuSwitch == 1 ? window.ede.danmaku.show() : window.ede.danmaku.hide();
                 }
@@ -65,7 +64,8 @@
         const searchButtonOpts = {
             title: '搜索弹幕',
             id: 'searchDanmaku',
-            innerText: search_icon,
+            //innerText: search_icon,
+            class: search_icon,
             onclick: () => {
                 if (window.ede.loading) {
                     console.log('正在加载,请稍后再试');
@@ -78,7 +78,8 @@
         const translateButtonOpts = {
             title: null,
             id: 'translateDanmaku',
-            innerText: translate_icon,
+            //innerText: translate_icon,
+            class: translate_icon,
             onclick: () => {
                 if (window.ede.loading) {
                     console.log('正在加载,请稍后再试');
@@ -95,7 +96,8 @@
         const infoButtonOpts = {
             title: '弹幕信息',
             id: 'printDanmakuInfo',
-            innerText: info_icon,
+            //innerText: info_icon,
+            class: info_icon,
             onclick: () => {
                 if (!window.ede.episode_info || window.ede.loading) {
                     console.log('正在加载,请稍后再试');
@@ -113,13 +115,14 @@
         const filterButtonOpts = {
             title: '过滤等级(下次加载生效)',
             id: 'filteringDanmaku',
-            innerText: null,
+            //innerText: null,
+            class: '',
             onclick: () => {
                 console.log('切换弹幕过滤等级');
                 let level = window.localStorage.getItem('danmakuFilterLevel');
                 level = ((level ? parseInt(level) : 0) + 1) % 4;
                 window.localStorage.setItem('danmakuFilterLevel', level);
-                document.querySelector('#filteringDanmaku').children[0].innerText = filter_icons[level];
+                document.querySelector('#filteringDanmaku').children[0].className = spanClass + filter_icons[level];
             },
         };
         // ------ configs end------
@@ -132,9 +135,11 @@
         // 检测是否在Tampermonkey中运行
         if (typeof GM_addStyle === 'undefined') {
             isInTampermonkey = false;
+        } else {
+            apiPrefix = '';
         }
 
-        if (isInTampermonkey) {
+        /*if (isInTampermonkey) {
             const md_icon_css = GM_getResourceText("MDICON_CSS");
             GM_addStyle(md_icon_css);
             apiPrefix = '';
@@ -145,7 +150,7 @@
             md_icon_link.rel = 'stylesheet';
             md_icon_link.href = md_icon_css;
             document.head.appendChild(md_icon_link);
-        }
+        }*/
 
         class EDE {
             constructor() {
@@ -173,8 +178,8 @@
             button.setAttribute('title', opt.title);
             button.setAttribute('id', opt.id);
             let icon = document.createElement('span');
-            icon.className = 'material-icons';
-            icon.innerText = opt.innerText;
+            icon.className = spanClass + opt.class;
+            // icon.innerText = opt.innerText;
             button.appendChild(icon);
             button.onclick = opt.onclick;
             return button;
@@ -197,7 +202,7 @@
             }
         }
 
-        function getElementsByInnerText(tagType, innerStr, excludeChildNode = true) {
+        /*function getElementsByInnerText(tagType, innerStr, excludeChildNode = true) {
             var temp = [];
             var elements = document.getElementsByTagName(tagType);
             if (!elements || 0 == elements.length) {
@@ -223,13 +228,14 @@
                 }
             });
             return res;
-        }
+        }*/
 
         function initUI() {
             // 页面未加载
             // let uiAnchor = getElementsByInnerText('i', uiAnchorStr);
-            // if (!uiAnchor || !uiAnchor[0]) {
-            if (!document.querySelector(uiQueryStr)) {
+            let uiAnchor = document.getElementsByClassName(uiAnchorStr);
+            if (!uiAnchor || !uiAnchor[0]) {
+            // if (!document.querySelector(uiQueryStr)) {
                 return;
             }
             // 已初始化
@@ -238,7 +244,7 @@
             }
             console.log('正在初始化UI');
             // 弹幕按钮容器div
-            var uiEle = null;
+            let uiEle = null;
             document.querySelectorAll(uiQueryStr).forEach(function (element) {
                 if (element.offsetParent != null) {
                     uiEle = element;
@@ -247,17 +253,17 @@
             if (uiEle == null) {
                 return;
             }
-            //let parent = uiAnchor[0].parentNode.parentNode.parentNode;
+            // let parent = uiAnchor[0].parentNode.parentNode;
             let parent = uiEle.parentNode;
             let menubar = document.createElement('div');
             menubar.id = 'danmakuCtr';
             if (!window.ede.episode_info) {
                 menubar.style.opacity = 0.5;
             }
-            //parent.append(menubar);
+            // parent.append(menubar);
             parent.insertBefore(menubar, uiEle);
             // 弹幕开关
-            displayButtonOpts.innerText = danmaku_icons[window.ede.danmakuSwitch];
+            displayButtonOpts.class = danmaku_icons[window.ede.danmakuSwitch];
             menubar.appendChild(createButton(displayButtonOpts));
             // 手动匹配
             menubar.appendChild(createButton(searchButtonOpts));
@@ -265,7 +271,7 @@
             translateButtonOpts.title = chConverTtitle[window.ede.chConvert];
             menubar.appendChild(createButton(translateButtonOpts));
             // 屏蔽等级
-            filterButtonOpts.innerText = filter_icons[parseInt(window.localStorage.getItem('danmakuFilterLevel') ? window.localStorage.getItem('danmakuFilterLevel') : 0)];
+            filterButtonOpts.class = filter_icons[parseInt(window.localStorage.getItem('danmakuFilterLevel') ? window.localStorage.getItem('danmakuFilterLevel') : 0)];
             menubar.appendChild(createButton(filterButtonOpts));
             // 弹幕信息
             menubar.appendChild(createButton(infoButtonOpts));
