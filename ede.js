@@ -18,12 +18,13 @@
     'use strict';
     if (document.querySelector('meta[name="application-name"]').content == 'Jellyfin') {
         // ------ configs start------
-        const deviceId = localStorage.getItem('_deviceId2');
+        let deviceId = localStorage.getItem('_deviceId2');
         const serversInfo = JSON.parse(localStorage.getItem('jellyfin_credentials')).Servers;
-        let token = '';
+        let authorization = '';
         let userId = '';
         let isInTampermonkey = true;
         let apiPrefix = 'https://api.9-ch.com/cors/';
+        const debugInfoLoc = 'console'; // 'console' or 'ui'
         const baseUrl = window.location.origin + window.location.pathname.replace('/web/index.html', '');
         const check_interval = 200;
         const chConverTtitle = ['当前状态: 未启用', '当前状态: 转换为简体', '当前状态: 转换为繁体'];
@@ -49,10 +50,10 @@
             class: '',
             onclick: () => {
                 if (window.ede.loading) {
-                    console.log('正在加载,请稍后再试');
+                    showDebugInfo('正在加载,请稍后再试');
                     return;
                 }
-                console.log('切换弹幕开关');
+                showDebugInfo('切换弹幕开关');
                 window.ede.danmakuSwitch = (window.ede.danmakuSwitch + 1) % 2;
                 window.localStorage.setItem('danmakuSwitch', window.ede.danmakuSwitch);
                 document.querySelector('#displayDanmaku').children[0].className = spanClass + danmaku_icons[window.ede.danmakuSwitch];
@@ -68,10 +69,10 @@
             class: search_icon,
             onclick: () => {
                 if (window.ede.loading) {
-                    console.log('正在加载,请稍后再试');
+                    showDebugInfo('正在加载,请稍后再试');
                     return;
                 }
-                console.log('手动匹配弹幕');
+                showDebugInfo('手动匹配弹幕');
                 reloadDanmaku('search');
             },
         };
@@ -82,15 +83,15 @@
             class: translate_icon,
             onclick: () => {
                 if (window.ede.loading) {
-                    console.log('正在加载,请稍后再试');
+                    showDebugInfo('正在加载,请稍后再试');
                     return;
                 }
-                console.log('切换简繁转换');
+                showDebugInfo('切换简繁转换');
                 window.ede.chConvert = (window.ede.chConvert + 1) % 3;
                 window.localStorage.setItem('chConvert', window.ede.chConvert);
                 document.querySelector('#translateDanmaku').setAttribute('title', chConverTtitle[window.ede.chConvert]);
                 reloadDanmaku('reload');
-                console.log(document.querySelector('#translateDanmaku').getAttribute('title'));
+                showDebugInfo(document.querySelector('#translateDanmaku').getAttribute('title'));
             },
         };
         const infoButtonOpts = {
@@ -100,10 +101,10 @@
             class: info_icon,
             onclick: () => {
                 if (!window.ede.episode_info || window.ede.loading) {
-                    console.log('正在加载,请稍后再试');
+                    showDebugInfo('正在加载,请稍后再试');
                     return;
                 }
-                console.log('显示当前信息');
+                showDebugInfo('显示当前信息');
                 let msg = '动画名称:' + window.ede.episode_info.animeTitle;
                 if (window.ede.episode_info.episodeTitle) {
                     msg += '\n分集名称:' + window.ede.episode_info.episodeTitle;
@@ -118,7 +119,7 @@
             //innerText: null,
             class: '',
             onclick: () => {
-                console.log('切换弹幕过滤等级');
+                showDebugInfo('切换弹幕过滤等级');
                 let level = window.localStorage.getItem('danmakuFilterLevel');
                 level = ((level ? parseInt(level) : 0) + 1) % 4;
                 window.localStorage.setItem('danmakuFilterLevel', level);
@@ -195,10 +196,10 @@
                 return;
             }
             if (!container.getAttribute('ede_listening')) {
-                console.log('正在初始化Listener');
+                showDebugInfo('正在初始化Listener');
                 container.setAttribute('ede_listening', true);
                 container.addEventListener('play', reloadDanmaku);
-                console.log('Listener初始化完成');
+                showDebugInfo('Listener初始化完成');
             }
         }
 
@@ -242,7 +243,7 @@
             if (document.getElementById('danmakuCtr')) {
                 return;
             }
-            console.log('正在初始化UI');
+            showDebugInfo('正在初始化UI');
             // 弹幕按钮容器div
             let uiEle = null;
             document.querySelectorAll(uiQueryStr).forEach(function (element) {
@@ -275,12 +276,44 @@
             menubar.appendChild(createButton(filterButtonOpts));
             // 弹幕信息
             menubar.appendChild(createButton(infoButtonOpts));
-            console.log('UI初始化完成');
+
+            if (debugInfoLoc == 'ui') {
+                // show debug info on page div span 
+                let div = document.createElement('div');
+                div.id = 'debugInfoDiv';
+                let span = document.createElement('span');
+                span.id = 'debugInfo';
+                let txt1 = deviceId ? deviceId : 'devId';
+                let txt2 = serversInfo ? serversInfo[0].AccessToken : 'Token';
+                showDebugInfo(txt1 + ' ' + txt2)
+                div.appendChild(span);
+                menubar.appendChild(div);
+            }
+            // let txt = '';
+            // for (let i = 0; i < localStorage.length; i++) {
+            //     txt += localStorage.key(i) + '\n';
+            // }
+            // prompt(txt);
+
+            showDebugInfo('UI初始化完成');
+        }
+
+        async function showDebugInfo(msg) {
+            if (debugInfoLoc == 'ui') {
+                let span = document.getElementById('debugInfo');
+                while (!span) {
+                    await new Promise((resolve) => setTimeout(resolve, 200));
+                    span = document.getElementById('debugInfo');
+                }
+                span.innerText += msg + '\n';
+            } else if (debugInfoLoc == 'console') {
+                console.log(msg);
+            }
         }
 
         function sendNotification(title, msg) {
             const Notification = window.Notification || window.webkitNotifications;
-            console.log(msg);
+            showDebugInfo(msg);
             if (Notification.permission === 'granted') {
                 return new Notification(title, {
                     body: msg,
@@ -296,33 +329,70 @@
             }
         }
 
+        async function initConfig() {
+            showDebugInfo('serverInfo');
+            // let srvInfo = await fetch(baseUrl + '/System/Info/Public').then(res => res.json());
+            // let token = '';
+            // let serverId = srvInfo.Id;
+            // serversInfo.forEach(data => {
+            //     if (data.Id == serverId) {
+            //         token = data.AccessToken;
+            //         userId = data.UserId;
+            //     }
+            // });
+            let token = serversInfo[0].AccessToken;
+            userId = serversInfo[0].UserId;
+
+            let sessionUrl = baseUrl + '/Sessions?ControllableByUserId=' + userId
+            if (deviceId) {
+                sessionUrl += '&DeviceId=' + deviceId;
+            }
+
+            showDebugInfo('Get DevId');
+            let sessionInfo = await fetch(sessionUrl, {
+                "credentials": "include",
+                "headers": {
+                    "Accept": "application/json",
+                    "Authorization": "MediaBrowser Token=\"" + token + "\""
+                },
+                "method": "GET",
+                "mode": "cors"
+            }).then(res => res.json());
+
+            if (!deviceId) {
+                deviceId = sessionInfo[0].DeviceId;
+                localStorage.setItem('_deviceId2', deviceId);
+            }
+
+            let clientName = sessionInfo[0].Client;
+            let deviceName = sessionInfo[0].DeviceName;
+            let serverVersion = sessionInfo[0].ApplicationVersion;
+            // Ref: https://gist.github.com/nielsvanvelzen/ea047d9028f676185832e51ffaf12a6f
+            authorization = "MediaBrowser Client=\"" + clientName + "\", Device=\"" + deviceName + "\", DeviceId=\"" + deviceId + "\", Version=\"" + serverVersion + "\", Token=\"" + token + "\"";
+        }
+
 
         async function getEmbyItemInfo() {
-            if (token.length > 0 && userId.length > 0) {
+            showDebugInfo('准备获取Item信息');
+            if (authorization.length > 0 && userId.length > 0 && deviceId.length > 0) {
+                showDebugInfo('正在获取Item信息');
                 let sessionUrl = baseUrl + '/Sessions?ControllableByUserId=' + userId + '&deviceId=' + deviceId;
+                showDebugInfo(sessionUrl);
                 let sessionInfo = await fetch(sessionUrl, {
                     "credentials": "include",
                     "headers": {
                         "Accept": "application/json",
-                        "X-MediaBrowser-Token": token
+                        "Authorization": authorization
                     },
                     "method": "GET",
                     "mode": "cors"
                 }).then(res => res.json());
                 var playingInfo = sessionInfo[0].NowPlayingItem;
+                showDebugInfo('成功 ' + playingInfo.SeriesName);
                 return playingInfo;
             } else {
-                while (!document.querySelector(".htmlvideoplayer")) {
-                    await new Promise((resolve) => setTimeout(resolve, 200));
-                }
-                let srvInfo = await fetch(baseUrl + '/System/Info/Public').then(res => res.json());
-                let serverId = srvInfo.Id;
-                serversInfo.forEach(data => {
-                    if (data.Id == serverId) {
-                        token = data.AccessToken;
-                        userId = data.UserId;
-                    }
-                });
+                showDebugInfo('等待Config');
+                await initConfig();
             }
         }
 
@@ -403,16 +473,16 @@
             let animaInfo = await makeGetRequest(searchUrl)
                 .then((response) => isInTampermonkey ? JSON.parse(response) : response.json())
                 .catch((error) => {
-                    console.log('查询失败:', error);
+                    showDebugInfo('查询失败:', error);
                     return null;
                 });
             if (animaInfo.animes.length == 0) {
-                console.log('弹幕查询无结果');
+                showDebugInfo('弹幕查询无结果');
                 //alert('弹幕查询无结果');
                 return null;
             }
-            console.log('查询成功');
-            console.log(animaInfo);
+            showDebugInfo('查询成功');
+            showDebugInfo(animaInfo);
             let selecAnime_id = 1;
             if (anime_id != -1) {
                 for (let index = 0; index < animaInfo.animes.length; index++) {
@@ -423,7 +493,7 @@
             }
             if (!is_auto) {
                 let anime_lists_str = list2string(animaInfo);
-                console.log(anime_lists_str);
+                showDebugInfo(anime_lists_str);
                 selecAnime_id = prompt('选择:\n' + anime_lists_str, selecAnime_id);
                 selecAnime_id = parseInt(selecAnime_id) - 1;
                 window.localStorage.setItem(_id_key, animaInfo.animes[selecAnime_id].animeId);
@@ -449,11 +519,11 @@
             return makeGetRequest(url)
                 .then((response) => isInTampermonkey ? JSON.parse(response) : response.json())
                 .then((data) => {
-                    console.log('弹幕下载成功: ' + data.comments.length);
+                    showDebugInfo('弹幕下载成功: ' + data.comments.length);
                     return data.comments;
                 })
                 .catch((error) => {
-                    console.log('获取弹幕失败:', error);
+                    showDebugInfo('获取弹幕失败:', error);
                     return null;
                 });
         }
@@ -468,11 +538,17 @@
                 window.ede.danmaku = null;
             }
             let _comments = danmakuFilter(danmakuParser(comments));
-            console.log('弹幕加载成功: ' + _comments.length);
+            showDebugInfo('弹幕加载成功: ' + _comments.length);
 
-            while (!document.querySelector(mediaContainerQueryStr)) {
-                await new Promise((resolve) => setTimeout(resolve, 200));
-            }
+            // while (!document.querySelector(mediaContainerQueryStr)) {
+            //     await new Promise((resolve) => setTimeout(resolve, 200));
+            // }
+            let txt = '';
+            document.querySelectorAll('div').forEach(function (element) {
+                if (element.id)
+                    txt += element.id + '\n';
+            });
+            //prompt(txt);
 
             var _container = null;
             document.querySelectorAll(mediaContainerQueryStr).forEach(function (element) {
@@ -480,20 +556,36 @@
                     _container = element;
                 }
             });
+            if (!_container) {
+                showDebugInfo('未找到播放器');
+            }
             let _media = document.querySelector(mediaQueryStr);
+            if (!_media) {
+                showDebugInfo('未找到video');
+            } else {
+                //prompt(_media.outerHTML);
+            }
+            // showDebugInfo(_comments[0].text)
+            showDebugInfo(_container.id + ' ' + _media.className)
             window.ede.danmaku = new Danmaku({
                 container: _container,
                 media: _media,
                 comments: _comments,
                 engine: 'canvas',
             });
+
+            // show _container's children
+            // _container.childNodes.forEach(function (element) {
+            //     showDebugInfo(element.nodeName + ' ' + element.className);
+            // });
+
             window.ede.danmakuSwitch == 1 ? window.ede.danmaku.show() : window.ede.danmaku.hide();
             if (window.ede.ob) {
                 window.ede.ob.disconnect();
             }
             window.ede.ob = new ResizeObserver(() => {
                 if (window.ede.danmaku) {
-                    console.log('Resizing');
+                    showDebugInfo('Resizing');
                     window.ede.danmaku.resize();
                 }
             });
@@ -502,7 +594,7 @@
 
         function reloadDanmaku(type = 'check') {
             if (window.ede.loading) {
-                console.log('正在重新加载');
+                showDebugInfo('正在重新加载');
                 return;
             }
             window.ede.loading = true;
@@ -528,12 +620,12 @@
                     (episodeId) =>
                         getComments(episodeId).then((comments) =>
                             createDanmaku(comments).then(() => {
-                                console.log('弹幕就位');
+                                showDebugInfo('弹幕就位');
                             }),
                         ),
                     (msg) => {
                         if (msg) {
-                            console.log(msg);
+                            showDebugInfo(msg);
                         }
                     },
                 )

@@ -7,6 +7,8 @@
 
 任选以下一种方式安装即可
 
+**注：** 安装完首次使用时，确保只有当前一个客户端访问服务器，以方便根据当前用户id获取Session时能唯一定位到当前客户端设备id。（主要是由于非Jellyfin Web客户端没有默认在localstorage中存储deviceid）
+
 ### 浏览器插件(推荐)
 
 1. [Tampermonkey](https://www.tampermonkey.net/)
