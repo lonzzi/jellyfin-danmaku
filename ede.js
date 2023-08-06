@@ -24,7 +24,9 @@
         let userId = '';
         let isInTampermonkey = true;
         let apiPrefix = 'https://api.9-ch.com/cors/';
-        const debugInfoLoc = 'console'; // 'console' or 'ui'
+        const debugInfoLoc = 'ui'; // 'console' or 'ui'
+        let logQueue = [];
+        let logLines = 0;
         const baseUrl = window.location.origin + window.location.pathname.replace('/web/index.html', '');
         const check_interval = 200;
         const chConverTtitle = ['当前状态: 未启用', '当前状态: 转换为简体', '当前状态: 转换为繁体'];
@@ -34,6 +36,7 @@
         const translate_icon = 'g_translate';
         const info_icon = 'import_contacts';
         const filter_icons = ['filter_none', 'filter_1', 'filter_2', 'filter_3'];
+        const log_icon = 'adb';
         const spanClass = 'xlargePaperIconButton material-icons ';
         const buttonOptions = {
             class: 'paper-icon-button-light',
@@ -42,6 +45,7 @@
         const uiAnchorStr = 'pause';
         const uiQueryStr = '.osdTimeText';
         const mediaContainerQueryStr = "div[data-type='video-osd']";
+        // const mediaContainerQueryStr = "div[class='videoPlayerContainer']";
         const mediaQueryStr = 'video';
         const displayButtonOpts = {
             title: '弹幕开关',
@@ -126,6 +130,26 @@
                 document.querySelector('#filteringDanmaku').children[0].className = spanClass + filter_icons[level];
             },
         };
+
+        const logButtonOpts = {
+            title: '日志开关',
+            id: 'displayLog',
+            class: log_icon,
+            onclick: () => {
+                if (window.ede.loading) {
+                    showDebugInfo('正在加载,请稍后再试');
+                    return;
+                }
+                // showDebugInfo('切换日志开关');
+                window.ede.logSwitch = (window.ede.logSwitch + 1) % 2;
+                window.localStorage.setItem('logSwitch', window.ede.logSwitch);
+                let logSpan = document.querySelector('#debugInfo');
+                if (logSpan) {
+                    window.ede.logSwitch == 1 ? (logSpan.style.display = 'block') : (logSpan.style.display = 'none');
+                }
+            },
+        };
+
         // ------ configs end------
         /* eslint-disable */
         /* https://cdn.jsdelivr.net/npm/danmaku/dist/danmaku.min.js */
@@ -163,6 +187,10 @@
                 this.danmakuSwitch = 1;
                 if (window.localStorage.getItem('danmakuSwitch')) {
                     this.danmakuSwitch = parseInt(window.localStorage.getItem('danmakuSwitch'));
+                }
+                this.logSwitch = 0;
+                if (window.localStorage.getItem('logSwitch')) {
+                    this.logSwitch = parseInt(window.localStorage.getItem('logSwitch'));
                 }
                 this.danmaku = null;
                 this.episode_info = null;
@@ -278,16 +306,26 @@
             menubar.appendChild(createButton(infoButtonOpts));
 
             if (debugInfoLoc == 'ui') {
-                // show debug info on page div span 
-                let div = document.createElement('div');
-                div.id = 'debugInfoDiv';
+                menubar.appendChild(createButton(logButtonOpts));
+
+                let _container = null;
+                document.querySelectorAll(mediaContainerQueryStr).forEach(function (element) {
+                    if (!element.classList.contains('hide')) {
+                        _container = element;
+                    }
+                });
                 let span = document.createElement('span');
                 span.id = 'debugInfo';
+                span.style.position = 'absolute';
+                span.style.overflow = 'auto';
+                span.style.zIndex = '99';
+                span.style.left = '10px';
+                span.style.top = '50px';
+                _container.appendChild(span);
+
                 let txt1 = deviceId ? deviceId : 'devId';
                 let txt2 = serversInfo ? serversInfo[0].AccessToken : 'Token';
                 showDebugInfo(txt1 + ' ' + txt2)
-                div.appendChild(span);
-                menubar.appendChild(div);
             }
             // let txt = '';
             // for (let i = 0; i < localStorage.length; i++) {
@@ -305,7 +343,17 @@
                     await new Promise((resolve) => setTimeout(resolve, 200));
                     span = document.getElementById('debugInfo');
                 }
-                span.innerText += msg + '\n';
+                if (logLines < 10) {
+                    logLines++;
+                    logQueue.push(msg);
+                } else {
+                    logQueue.shift();
+                    logQueue.push(msg);
+                }
+                span.innerText = '';
+                logQueue.forEach((line) => {
+                    span.innerText += line + '\n';
+                });
             } else if (debugInfoLoc == 'console') {
                 console.log(msg);
             }
@@ -376,18 +424,22 @@
             showDebugInfo('准备获取Item信息');
             if (authorization.length > 0 && userId.length > 0 && deviceId.length > 0) {
                 showDebugInfo('正在获取Item信息');
-                let sessionUrl = baseUrl + '/Sessions?ControllableByUserId=' + userId + '&deviceId=' + deviceId;
-                showDebugInfo(sessionUrl);
-                let sessionInfo = await fetch(sessionUrl, {
-                    "credentials": "include",
-                    "headers": {
-                        "Accept": "application/json",
-                        "Authorization": authorization
-                    },
-                    "method": "GET",
-                    "mode": "cors"
-                }).then(res => res.json());
-                var playingInfo = sessionInfo[0].NowPlayingItem;
+                let playingInfo = null;
+                while (!playingInfo) {
+                    await new Promise((resolve) => setTimeout(resolve, 200));
+                    let sessionUrl = baseUrl + '/Sessions?ControllableByUserId=' + userId + '&deviceId=' + deviceId;
+                    showDebugInfo(sessionUrl);
+                    let sessionInfo = await fetch(sessionUrl, {
+                        "credentials": "include",
+                        "headers": {
+                            "Accept": "application/json",
+                            "Authorization": authorization
+                        },
+                        "method": "GET",
+                        "mode": "cors"
+                    }).then(res => res.json());
+                    playingInfo = sessionInfo[0].NowPlayingItem;
+                }
                 showDebugInfo('成功 ' + playingInfo.SeriesName);
                 return playingInfo;
             } else {
@@ -550,7 +602,7 @@
             });
             //prompt(txt);
 
-            var _container = null;
+            let _container = null;
             document.querySelectorAll(mediaContainerQueryStr).forEach(function (element) {
                 if (!element.classList.contains('hide')) {
                     _container = element;
@@ -578,6 +630,14 @@
             // _container.childNodes.forEach(function (element) {
             //     showDebugInfo(element.nodeName + ' ' + element.className);
             // });
+            _container.childNodes.forEach(function (element) {
+                if (element.nodeName == 'CANVAS') {
+                    element.style.position = 'absolute';
+                    element.style.zIndex = '999';
+                    element.style.left = '0px';
+                    element.style.top = '24px';
+                }
+            });
 
             window.ede.danmakuSwitch == 1 ? window.ede.danmaku.show() : window.ede.danmaku.hide();
             if (window.ede.ob) {
