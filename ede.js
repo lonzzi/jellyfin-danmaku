@@ -36,6 +36,7 @@
         const translate_icon = 'g_translate';
         const info_icon = 'import_contacts';
         const filter_icons = ['filter_none', 'filter_1', 'filter_2', 'filter_3'];
+        const source_icon = 'library_add';
         const log_icon = 'adb';
         const spanClass = 'xlargePaperIconButton material-icons ';
         const buttonOptions = {
@@ -130,6 +131,23 @@
                 document.querySelector('#filteringDanmaku').children[0].className = spanClass + filter_icons[level];
             },
         };
+
+        const sourceButtonOpts = {
+            title: '手动增加弹幕源',
+            id: 'addDanmakuSource',
+            class: source_icon,
+            onclick: () => {
+                showDebugInfo('手动增加弹幕源');
+                let source = prompt('请输入弹幕源地址:');
+                if (source) {
+                    getCommentsByUrl(source).then((comments) => {
+                        createDanmaku(comments).then(() => {
+                            showDebugInfo('弹幕就位');
+                        });
+                    });
+                }
+            },
+        }
 
         const logButtonOpts = {
             title: '日志开关',
@@ -277,6 +295,8 @@
             menubar.appendChild(createButton(filterButtonOpts));
             // 弹幕信息
             menubar.appendChild(createButton(infoButtonOpts));
+            // 手动增加弹幕源
+            menubar.appendChild(createButton(sourceButtonOpts));
 
             if (debugInfoLoc == 'ui') {
                 menubar.appendChild(createButton(logButtonOpts));
@@ -294,7 +314,7 @@
                 span.style.zIndex = '99';
                 span.style.left = '10px';
                 span.style.top = '50px';
-                span.style.display = 'none';
+                window.ede.logSwitch == 1 ? (span.style.display = 'block') : (span.style.display = 'none');
                 _container.appendChild(span);
 
                 let txt1 = deviceId ? deviceId : 'devId';
@@ -549,6 +569,29 @@
                 });
         }
 
+        async function getCommentsByUrl(src) {
+            const url_encoded = encodeURIComponent(src);
+            const url = apiPrefix + 'https://api.dandanplay.net/api/v2/extcomment?url=' + url_encoded;
+            let comments = [];
+            for (let i = 0; i < 2; i++) {
+                comments = makeGetRequest(url)
+                    .then((response) => isInTampermonkey ? JSON.parse(response) : response.json())
+                    .then((data) => {
+                        showDebugInfo('弹幕下载成功: ' + data.comments.length);
+                        return data.comments;
+                    })
+                    .catch((error) => {
+                        showDebugInfo('获取弹幕失败:', error);
+                        return null;
+                    });
+                if (comments.length > 0) {
+                    break;
+                }
+                await new Promise((resolve) => setTimeout(resolve, 3000));
+            }
+            return comments;
+        }
+
         async function createDanmaku(comments) {
             if (!comments) {
                 return;
@@ -561,9 +604,9 @@
             let _comments = danmakuFilter(danmakuParser(comments));
             showDebugInfo('弹幕加载成功: ' + _comments.length);
 
-            // while (!document.querySelector(mediaContainerQueryStr)) {
-            //     await new Promise((resolve) => setTimeout(resolve, 200));
-            // }
+            while (!document.querySelector(mediaContainerQueryStr)) {
+                await new Promise((resolve) => setTimeout(resolve, 200));
+            }
 
             let _container = null;
             document.querySelectorAll(mediaContainerQueryStr).forEach(function (element) {
