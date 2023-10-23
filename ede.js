@@ -170,11 +170,11 @@
         };
 
         const danmakuOpacityOpts = {
-            title: 'Change Opacity',
+            title: '更改透明度',
             id: 'changeOpacity',
             class: opacity_icon,
             onclick: () => {
-                let opacityStr = prompt("Input 0-1 opacity value:", 1.0)
+                let opacityStr = prompt("请输入0-1之间的透明度值（如0.4）", 1.0)
                 if (!opacityStr) return
                 if (window.ede) {
                     try {
