@@ -38,6 +38,7 @@
         const filter_icons = ['filter_none', 'filter_1', 'filter_2', 'filter_3'];
         const source_icon = 'library_add';
         const log_icon = 'adb';
+        const opacity_icon = 'opacity'
         const spanClass = 'xlargePaperIconButton material-icons ';
         const buttonOptions = {
             class: 'paper-icon-button-light',
@@ -168,6 +169,28 @@
             },
         };
 
+        const danmakuOpacityOpts = {
+            title: '更改透明度',
+            id: 'changeOpacity',
+            class: opacity_icon,
+            onclick: () => {
+                let opacityStr = prompt("请输入0-1之间的透明度值（如0.4）", 1.0)
+                if (!opacityStr) return
+                if (window.ede) {
+                    try {
+                        let tmp = parseFloatOfRange(opacityStr, 0, 1)
+                        if (isNaN(tmp)) throw EvalError('Can not evaluate input as float')
+                        window.ede.danmaku.container.lastChild.style.opacity = window.ede.opacity = tmp
+                        showDebugInfo(`toggle opacity ${window.ede.opacity} on ${window.ede.danmaku.container.id}`)
+                        window.localStorage.setItem('danmakuOpacity', window.ede.opacity.toString())
+                    } catch (e) {
+                        alert(`Invalid input: ${opacityStr}`)
+                        showDebugInfo(e)
+                    }
+                }
+            }
+        }
+
         // ------ configs end------
         /* eslint-disable */
         /* https://cdn.jsdelivr.net/npm/danmaku/dist/danmaku.min.js */
@@ -210,12 +233,17 @@
                 if (window.localStorage.getItem('logSwitch')) {
                     this.logSwitch = parseInt(window.localStorage.getItem('logSwitch'));
                 }
+                let opacityRecord = window.localStorage.getItem('danmakuOpacity')
+                this.opacity = opacityRecord ? parseFloatOfRange(opacityRecord, 0.0, 1.0) : 1.0
                 this.danmaku = null;
                 this.episode_info = null;
                 this.ob = null;
                 this.loading = false;
             }
         }
+
+        const parseFloatOfRange = (str, lb, hb) => Math.min(Math.max(parseFloat(str), lb), hb)
+
 
         function createButton(opt) {
             //let button = document.createElement('button', buttonOptions);
@@ -296,7 +324,8 @@
             menubar.appendChild(createButton(infoButtonOpts));
             // 手动增加弹幕源
             menubar.appendChild(createButton(sourceButtonOpts));
-
+            menubar.appendChild(createButton(danmakuOpacityOpts));
+            
             if (debugInfoLoc == 'ui') {
                 menubar.appendChild(createButton(logButtonOpts));
 
@@ -637,6 +666,8 @@
                     element.style.top = '18px';
                 }
             });
+
+            _container.lastChild.style.opacity = window.ede.opacity;
 
             // window.ede.danmaku.emit({
             //     text: 'example',
