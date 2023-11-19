@@ -28,9 +28,11 @@ sub_filter_once on;
 ### 修改服务端
 
 修改文件 `/usr/share/jellyfin/web/index.html`
+
 (Default)
 
 或 `/jellyfin/jellyfin-web/index.html`
+
 (Official Docker)
 
 在`</body>`前添加如下标签
