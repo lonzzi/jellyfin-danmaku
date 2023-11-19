@@ -12,6 +12,7 @@
 // @grant        GM_xmlhttpRequest
 // @connect      *
 // @match        *://*/*/web/index.html
+// @match        *://*/web/index.html
 // ==/UserScript==
 
 (async function () {
