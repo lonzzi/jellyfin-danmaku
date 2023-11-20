@@ -475,6 +475,10 @@
                         "mode": "cors"
                     }).then(res => res.json());
                     playingInfo = sessionInfo[0].NowPlayingItem;
+                    if (sessionInfo[0] && !playingInfo) {
+                        showDebugInfo('闲置中');
+                        return 'Idle';
+                    }
                 }
                 showDebugInfo('成功 ' + playingInfo.SeriesName);
                 return playingInfo;
@@ -531,10 +535,14 @@
                 if (session != 1) {
                     animeName += ' ' + session;
                 }
-            } else {
+            } else if (item.Type == 'Movie') {
                 _id = item.Id;
                 animeName = item.Name;
                 episode = 'movie';
+            } else {
+                _id = item.Id;
+                animeName = item.Name;
+                episode = '';
             }
             let _id_key = '_anime_id_rel_' + _id;
             let _name_key = '_anime_name_rel_' + _id;
@@ -555,7 +563,7 @@
             }
 
             let searchUrl = apiPrefix + 'https://api.dandanplay.net/api/v2/search/episodes?anime=' + animeName + '&withRelated=true';
-            if (is_auto) {
+            if (is_auto && episode.toString().length > 0) {
                 searchUrl += '&episode=' + episode;
             }
             let animaInfo = await makeGetRequest(searchUrl)
@@ -587,7 +595,7 @@
                 window.localStorage.setItem(_id_key, animaInfo.animes[selecAnime_id].animeId);
                 window.localStorage.setItem(_name_key, animaInfo.animes[selecAnime_id].animeTitle);
                 let episode_lists_str = ep2string(animaInfo.animes[selecAnime_id].episodes);
-                episode = prompt('确认集数:\n' + episode_lists_str, parseInt(episode));
+                episode = prompt('确认集数:\n' + episode_lists_str, parseInt(episode) || 1);
                 episode = parseInt(episode) - 1;
             } else {
                 selecAnime_id = parseInt(selecAnime_id) - 1;
@@ -644,12 +652,13 @@
             if (!comments) {
                 return;
             }
+
+            let wrapper = document.getElementById('danmakuWrapper');
+            wrapper && wrapper.parentNode.removeChild(wrapper);
             if (window.ede.danmaku != null) {
                 window.ede.danmaku.clear();
                 window.ede.danmaku.destroy();
                 window.ede.danmaku = null;
-                let wrapper = document.getElementById('danmakuWrapper');
-                wrapper.parentNode.removeChild(wrapper);
             }
             let _comments = danmakuFilter(danmakuParser(comments));
             showDebugInfo('弹幕加载成功: ' + _comments.length);
@@ -679,7 +688,7 @@
             // showDebugInfo(_comments[0].text)
             // showDebugInfo(_container.id + ' ' + _media.className)
 
-            const wrapper = document.createElement('div');
+            wrapper = document.createElement('div');
             wrapper.id = 'danmakuWrapper';
             wrapper.style.position = 'relative';
             wrapper.style.width = '100%';
