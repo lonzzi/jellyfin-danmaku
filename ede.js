@@ -121,7 +121,7 @@
         };
 
         const filterButtonOpts = {
-            title: '过滤等级(下次加载生效)',
+            title: '过滤等级',
             id: 'filteringDanmaku',
             //innerText: null,
             class: '',
@@ -131,6 +131,8 @@
                 level = ((level ? parseInt(level) : 0) + 1) % 4;
                 window.localStorage.setItem('danmakuFilterLevel', level);
                 document.querySelector('#filteringDanmaku').children[0].className = spanClass + filter_icons[level];
+                reloadDanmaku('reload');
+                
             },
         };
 
