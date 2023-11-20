@@ -6,7 +6,7 @@
 
 ## 安装
 
-任选以下一种方式安装即可
+任选以下一种方式安装即可，前两种推荐方式可以持久化
 
 **注：** 安装完首次使用时，确保只有当前一个客户端访问服务器，以方便根据当前用户id获取Session时能唯一定位到当前客户端设备id。（主要是由于非Jellyfin Web客户端没有默认在localstorage中存储deviceid）
 
@@ -15,7 +15,7 @@
 1. [安装Tampermonkey插件](https://www.tampermonkey.net/)
 2. [添加脚本](https://jellyfin-danmaku.pages.dev/ede.user.js)
 
-### Nginx反向代理处理
+### Nginx反向代理处理(推荐)
 使用Nginx反向代理Jellyfin并在location块中插入
 ```
 #禁用与后端压缩并侧载脚本
