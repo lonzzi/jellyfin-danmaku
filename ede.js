@@ -549,7 +549,9 @@
             let _episode_key = '_episode_id_rel_' + _id + '_' + episode;
             if (is_auto) {
                 if (window.localStorage.getItem(_episode_key)) {
-                    return JSON.parse(window.localStorage.getItem(_episode_key));
+                    const episodeInfo = JSON.parse(window.localStorage.getItem(_episode_key));
+                    window.ede.episode_info_str = episodeInfo.animeTitle + '\n' + episodeInfo.episodeTitle;
+                    return episodeInfo;
                 }
             }
             if (window.localStorage.getItem(_id_key)) {
