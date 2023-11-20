@@ -1,7 +1,7 @@
 # jellyfin-danmaku
 
 ## Jellyfin danmaku extension
-![image](https://github.com/Xarth-Mai/jellyfin-danmaku/assets/72293030/ee068386-4a0a-4afd-8078-bb9724bb907d)
+![image](/Simple.png)
 
 
 
