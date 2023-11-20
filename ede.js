@@ -254,6 +254,7 @@
                 this.heightRatio = heightRecord ? parseFloatOfRange(heightRecord, 0.0, 1.0) : 0.7
                 this.danmaku = null;
                 this.episode_info = null;
+                this.episode_info_str = '';
                 this.ob = null;
                 this.loading = false;
             }
@@ -598,7 +599,7 @@
                 episodeTitle: animaInfo.animes[selecAnime_id].type == 'tvseries' ? animaInfo.animes[selecAnime_id].episodes[episode].episodeTitle : null,
             };
             window.localStorage.setItem(_episode_key, JSON.stringify(episodeInfo));
-            showDebugInfo(JSON.stringify(episodeInfo));
+            window.ede.episode_info_str = episodeInfo.animeTitle + '\n' + episodeInfo.episodeTitle;
             return episodeInfo;
         }
 
@@ -748,7 +749,7 @@
                     (episodeId) =>
                         getComments(episodeId).then((comments) =>
                             createDanmaku(comments).then(() => {
-                                showDebugInfo('弹幕就位');
+                                showDebugInfo(window.ede.episode_info_str + '\n 弹幕就位');
                             }),
                         ),
                     (msg) => {
