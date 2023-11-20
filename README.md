@@ -1,7 +1,9 @@
 # jellyfin-danmaku
 
 ## Jellyfin danmaku extension
-![image](https://github.com/Xarth-Mai/jellyfin-danmaku/assets/72293030/0eb46eb2-8cce-4bb1-a828-319a250f01e4)
+![image](https://github.com/Xarth-Mai/jellyfin-danmaku/assets/72293030/ee068386-4a0a-4afd-8078-bb9724bb907d)
+
+
 
 
 ## 安装
