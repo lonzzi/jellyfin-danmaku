@@ -188,7 +188,8 @@
                         window.ede.heightRatio = tmpHeightRatio;
                         showDebugInfo(`设置弹幕高度：${window.ede.heightRatio}`);
                         window.localStorage.setItem('danmakuheight', window.ede.heightRatio.toString());
-                        document.getElementById('danmakuWrapper').style.height = `${window.ede.heightRatio * 100}%`;
+                        const wrapper = document.getElementById('danmakuWrapper');
+                        wrapper && (wrapper.style.height = `${window.ede.heightRatio * 100}%`);
                         //Reload
                         reloadDanmaku('reload');
                     } catch (e) {
