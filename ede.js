@@ -535,10 +535,6 @@
                 if (session != 1) {
                     animeName += ' ' + session;
                 }
-            } else if (item.Type == 'Movie') {
-                _id = item.Id;
-                animeName = item.Name;
-                episode = 'movie';
             } else {
                 _id = item.Id;
                 animeName = item.Name;
@@ -704,7 +700,7 @@
                 comments: _comments,
                 engine: 'canvas',
             });
-            
+
             wrapper.lastChild.style.position = 'absolute';
             wrapper.lastChild.style.top = '18px';
 
@@ -771,8 +767,9 @@
                 )
                 .then(() => {
                     window.ede.loading = false;
-                    if (document.getElementById('danmakuCtr').style.opacity != 1) {
-                        document.getElementById('danmakuCtr').style.opacity = 1;
+                    var danmakuCtr = document.getElementById('danmakuCtr');
+                    if (danmakuCtr && danmakuCtr.style && danmakuCtr.style.opacity !== '1') {
+                         danmakuCtr.style.opacity = 1;
                     }
                 });
         }
