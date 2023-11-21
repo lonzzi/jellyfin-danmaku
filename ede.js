@@ -3,7 +3,7 @@
 // @description  Jellyfin弹幕插件
 // @namespace    https://github.com/RyoLee
 // @author       RyoLee
-// @version      1.15
+// @version      1.16
 // @copyright    2022, RyoLee (https://github.com/RyoLee)
 // @license      MIT; https://raw.githubusercontent.com/Izumiko/jellyfin-danmaku/jellyfin/LICENSE
 // @icon         https://github.githubassets.com/pinned-octocat.svg
@@ -737,12 +737,29 @@
                 window.ede.obMutation.disconnect();
             }
             window.ede.obMutation = new MutationObserver(() => {
-                if (window.ede.danmaku) {
+                if (window.ede.danmaku && document.querySelector(mediaQueryStr)) {
                     showDebugInfo('Video Changed');
                     reloadDanmaku('reload');
                 }
             });
             window.ede.obMutation.observe(_media, { attributes: true });
+
+            if (!window.obVideo) {
+                window.obVideo = new MutationObserver((mutationList, observer) => {
+                    for (let mutationRecord of mutationList) {
+                        if (mutationRecord.removedNodes) {
+                          for (let removedNode of mutationRecord.removedNodes) {
+                            if (removedNode.className && removedNode.classList.contains('videoPlayerContainer')) {
+                                console.log('Video Removed');
+                                window.ede.loading = false;
+                                return;
+                            }
+                          }
+                        }
+                    }
+                });
+                window.obVideo.observe(document.body, { childList: true });
+            }
         }
 
         function reloadDanmaku(type = 'check') {
