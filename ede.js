@@ -255,7 +255,8 @@
                 this.danmaku = null;
                 this.episode_info = null;
                 this.episode_info_str = '';
-                this.ob = null;
+                this.obResize = null;
+                this.obMutation = null;
                 this.loading = false;
             }
         }
@@ -453,6 +454,7 @@
             let serverVersion = sessionInfo[0].ApplicationVersion;
             // Ref: https://gist.github.com/nielsvanvelzen/ea047d9028f676185832e51ffaf12a6f
             authorization = "MediaBrowser Client=\"" + clientName + "\", Device=\"" + deviceName + "\", DeviceId=\"" + deviceId + "\", Version=\"" + serverVersion + "\", Token=\"" + token + "\"";
+            return deviceId;
         }
 
 
@@ -475,12 +477,12 @@
                         "mode": "cors"
                     }).then(res => res.json());
                     playingInfo = sessionInfo[0].NowPlayingItem;
-                    if (sessionInfo[0] && !playingInfo) {
-                        showDebugInfo('闲置中');
-                        return 'Idle';
-                    }
+                    // if (sessionInfo[0] && !playingInfo) {
+                    //     showDebugInfo('闲置中');
+                    //     return 'Idle';
+                    // }
                 }
-                showDebugInfo('成功 ' + playingInfo.SeriesName);
+                showDebugInfo('成功 ' + (playingInfo.SeriesName || playingInfo.Name));
                 return playingInfo;
             } else {
                 showDebugInfo('等待Config');
@@ -720,16 +722,27 @@
             window.ede.danmaku.speed = window.ede.speed
 
             window.ede.danmakuSwitch == 1 ? window.ede.danmaku.show() : window.ede.danmaku.hide();
-            if (window.ede.ob) {
-                window.ede.ob.disconnect();
+            if (window.ede.obResize) {
+                window.ede.obResize.disconnect();
             }
-            window.ede.ob = new ResizeObserver(() => {
+            window.ede.obResize = new ResizeObserver(() => {
                 if (window.ede.danmaku) {
                     showDebugInfo('Resizing');
                     window.ede.danmaku.resize();
                 }
             });
-            window.ede.ob.observe(_container);
+            window.ede.obResize.observe(_container);
+
+            if (window.ede.obMutation) {
+                window.ede.obMutation.disconnect();
+            }
+            window.ede.obMutation = new MutationObserver(() => {
+                if (window.ede.danmaku) {
+                    showDebugInfo('Video Changed');
+                    reloadDanmaku('reload');
+                }
+            });
+            window.ede.obMutation.observe(_media, { attributes: true });
         }
 
         function reloadDanmaku(type = 'check') {
@@ -879,7 +892,7 @@
             setInterval(() => {
                 initUI();
             }, check_interval);
-            while (!(await getEmbyItemInfo())) {
+            while (!(await initConfig())) {
                 await new Promise((resolve) => setTimeout(resolve, 200));
             }
             reloadDanmaku('init');
