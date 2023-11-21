@@ -3,7 +3,7 @@
 // @description  Jellyfin弹幕插件
 // @namespace    https://github.com/RyoLee
 // @author       RyoLee
-// @version      1.16
+// @version      1.17
 // @copyright    2022, RyoLee (https://github.com/RyoLee)
 // @license      MIT; https://raw.githubusercontent.com/Izumiko/jellyfin-danmaku/jellyfin/LICENSE
 // @icon         https://github.githubassets.com/pinned-octocat.svg
@@ -637,7 +637,7 @@
             wrapper.style.position = 'absolute';
             wrapper.style.width = '100%';
             wrapper.style.height = window.ede.heightRatio * 100 + '%';
-            wrapper.style.top = '0';
+            wrapper.style.top = '18px';
             wrapper.style.overflow = 'hidden';
             _container.prepend(wrapper);
 
@@ -647,9 +647,6 @@
                 comments: _comments,
                 engine: 'canvas',
             });
-
-            wrapper.lastChild.style.position = 'absolute';
-            wrapper.lastChild.style.top = '18px';
 
             wrapper.lastChild.style.opacity = window.ede.opacity;
             window.ede.danmaku.speed = window.ede.speed
