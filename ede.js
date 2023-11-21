@@ -52,7 +52,6 @@
         const displayButtonOpts = {
             title: '弹幕开关',
             id: 'displayDanmaku',
-            //innerText: null,
             class: '',
             onclick: () => {
                 if (window.ede.loading) {
@@ -72,7 +71,6 @@
         const searchButtonOpts = {
             title: '搜索弹幕',
             id: 'searchDanmaku',
-            //innerText: search_icon,
             class: search_icon,
             onclick: () => {
                 if (window.ede.loading) {
@@ -86,7 +84,6 @@
         const translateButtonOpts = {
             title: null,
             id: 'translateDanmaku',
-            //innerText: translate_icon,
             class: translate_icon,
             onclick: () => {
                 if (window.ede.loading) {
@@ -105,7 +102,6 @@
         const filterButtonOpts = {
             title: '过滤等级',
             id: 'filteringDanmaku',
-            //innerText: null,
             class: '',
             onclick: () => {
                 showDebugInfo('切换弹幕过滤等级');
@@ -214,19 +210,6 @@
             apiPrefix = '';
         }
 
-        /*if (isInTampermonkey) {
-            const md_icon_css = GM_getResourceText("MDICON_CSS");
-            GM_addStyle(md_icon_css);
-            apiPrefix = '';
-        } else {
-            // load css url
-            const md_icon_css = 'https://fonts.googleapis.com/icon?family=Material+Icons';
-            const md_icon_link = document.createElement('link');
-            md_icon_link.rel = 'stylesheet';
-            md_icon_link.href = md_icon_css;
-            document.head.appendChild(md_icon_link);
-        }*/
-
         class EDE {
             constructor() {
                 this.chConvert = 1;
@@ -263,7 +246,6 @@
 
 
         function createButton(opt) {
-            //let button = document.createElement('button', buttonOptions);
             let button = document.createElement('button');
             button.className = buttonOptions.class;
             button.setAttribute('is', buttonOptions.is);
@@ -271,7 +253,6 @@
             button.setAttribute('id', opt.id);
             let icon = document.createElement('span');
             icon.className = spanClass + opt.class;
-            // icon.innerText = opt.innerText;
             button.appendChild(icon);
             button.onclick = opt.onclick;
             return button;
@@ -296,10 +277,8 @@
 
         function initUI() {
             // 页面未加载
-            // let uiAnchor = getElementsByInnerText('i', uiAnchorStr);
             let uiAnchor = document.getElementsByClassName(uiAnchorStr);
             if (!uiAnchor || !uiAnchor[0]) {
-                // if (!document.querySelector(uiQueryStr)) {
                 return;
             }
             // 已初始化
@@ -317,14 +296,14 @@
             if (uiEle == null) {
                 return;
             }
-            // let parent = uiAnchor[0].parentNode.parentNode;
+
             let parent = uiEle.parentNode;
             let menubar = document.createElement('div');
             menubar.id = 'danmakuCtr';
             if (!window.ede.episode_info) {
                 menubar.style.opacity = 0.5;
             }
-            // parent.append(menubar);
+
             parent.insertBefore(menubar, uiEle);
             // 弹幕开关
             displayButtonOpts.class = danmaku_icons[window.ede.danmakuSwitch];
@@ -360,10 +339,6 @@
                 span.style.top = '50px';
                 window.ede.logSwitch == 1 ? (span.style.display = 'block') : (span.style.display = 'none');
                 _container.appendChild(span);
-
-                // let txt1 = deviceId ? deviceId : 'devId';
-                // let txt2 = serversInfo ? serversInfo[0].AccessToken : 'Token';
-                // showDebugInfo(txt1 + ' ' + txt2)
             }
 
             showDebugInfo('UI初始化完成');
@@ -391,24 +366,6 @@
                 console.log(msg);
             }
         }
-
-        // function sendNotification(title, msg) {
-        //     const Notification = window.Notification || window.webkitNotifications;
-        //     showDebugInfo(msg);
-        //     if (Notification.permission === 'granted') {
-        //         return new Notification(title, {
-        //             body: msg,
-        //         });
-        //     } else {
-        //         Notification.requestPermission((permission) => {
-        //             if (permission === 'granted') {
-        //                 return new Notification(title, {
-        //                     body: msg,
-        //                 });
-        //             }
-        //         });
-        //     }
-        // }
 
         async function initConfig() {
             showDebugInfo('serverInfo');
@@ -473,10 +430,6 @@
                         "mode": "cors"
                     }).then(res => res.json());
                     playingInfo = sessionInfo[0].NowPlayingItem;
-                    // if (sessionInfo[0] && !playingInfo) {
-                    //     showDebugInfo('闲置中');
-                    //     return 'Idle';
-                    // }
                 }
                 showDebugInfo('成功 ' + (playingInfo.SeriesName || playingInfo.Name));
                 return playingInfo;
@@ -570,11 +523,10 @@
                 });
             if (animaInfo.animes.length == 0) {
                 showDebugInfo('弹幕查询无结果');
-                //alert('弹幕查询无结果');
                 return null;
             }
             showDebugInfo('查询成功');
-            // showDebugInfo(animaInfo.stringify());
+
             let selecAnime_id = 1;
             if (anime_id != -1) {
                 for (let index = 0; index < animaInfo.animes.length; index++) {
@@ -678,11 +630,7 @@
             let _media = document.querySelector(mediaQueryStr);
             if (!_media) {
                 showDebugInfo('未找到video');
-            } else {
-                //prompt(_media.outerHTML);
             }
-            // showDebugInfo(_comments[0].text)
-            // showDebugInfo(_container.id + ' ' + _media.className)
 
             wrapper = document.createElement('div');
             wrapper.id = 'danmakuWrapper';
@@ -702,14 +650,6 @@
 
             wrapper.lastChild.style.position = 'absolute';
             wrapper.lastChild.style.top = '18px';
-
-            // window.ede.danmakuResize = (heightRatio, element) => {
-            //     if (element) {
-            //         const ratioPercent = heightRatio * 100;
-            //         const ratio = ratioPercent + '%';
-            //         element.style.height = ratio;
-            //     }
-            // };
 
             wrapper.lastChild.style.opacity = window.ede.opacity;
             window.ede.danmaku.speed = window.ede.speed
@@ -835,9 +775,8 @@
         }
 
         function danmakuParser($obj) {
-            //const $xml = new DOMParser().parseFromString(string, 'text/xml')
             // const fontSize = Math.round(((window.screen.height > window.screen.width ? window.screen.width : window.screen.height) / 1080) * 18);
-            const fontSize = window.ede.fontSize; // font size is buggy on mobile, fixed to 18
+            const fontSize = window.ede.fontSize; // font size is buggy on mobile, use fixed size instead
             showDebugInfo('Screen: ' + window.screen.width + 'x' + window.screen.height);
             showDebugInfo('fontSize: ' + fontSize);
             return $obj
@@ -847,8 +786,6 @@
                     const values = p.split(',');
                     const mode = { 6: 'ltr', 1: 'rtl', 5: 'top', 4: 'bottom' }[values[1]];
                     if (!mode) return null;
-                    // const fontSize = Number(values[2]) || 25
-                    // const fontSize = Math.round((window.screen.height > window.screen.width ? window.screen.width : window.screen.height / 1080) * 18);
                     const color = `000000${Number(values[2]).toString(16)}`.slice(-6);
                     return {
                         text: $comment.m,
