@@ -3,7 +3,7 @@
 // @description  Jellyfin弹幕插件
 // @namespace    https://github.com/RyoLee
 // @author       RyoLee
-// @version      1.17
+// @version      1.18
 // @copyright    2022, RyoLee (https://github.com/RyoLee)
 // @license      MIT; https://raw.githubusercontent.com/Izumiko/jellyfin-danmaku/jellyfin/LICENSE
 // @icon         https://github.githubassets.com/pinned-octocat.svg
@@ -30,7 +30,7 @@
         let logLines = 0;
         const baseUrl = window.location.origin + window.location.pathname.replace('/web/index.html', '');
         const check_interval = 200;
-        const chConverTtitle = ['当前状态: 未启用', '当前状态: 转换为简体', '当前状态: 转换为繁体'];
+        const chConverTtitle = ['当前状态: 未启用翻译', '当前状态: 转换为简体', '当前状态: 转换为繁体'];
         // 0:当前状态关闭 1:当前状态打开
         const danmaku_icons = ['comments_disabled', 'comment'];
         const search_icon = 'find_replace';
@@ -47,7 +47,6 @@
         const uiAnchorStr = 'pause';
         const uiQueryStr = '.osdTimeText';
         const mediaContainerQueryStr = "div[data-type='video-osd']";
-        // const mediaContainerQueryStr = "div[class='videoPlayerContainer']";
         const mediaQueryStr = 'video';
         const displayButtonOpts = {
             title: '弹幕开关',
@@ -369,15 +368,6 @@
 
         async function initConfig() {
             showDebugInfo('serverInfo');
-            // let srvInfo = await fetch(baseUrl + '/System/Info/Public').then(res => res.json());
-            // let token = '';
-            // let serverId = srvInfo.Id;
-            // serversInfo.forEach(data => {
-            //     if (data.Id == serverId) {
-            //         token = data.AccessToken;
-            //         userId = data.UserId;
-            //     }
-            // });
             let token = serversInfo[0].AccessToken;
             userId = serversInfo[0].UserId;
 
@@ -446,7 +436,7 @@
                         method: "GET",
                         url: url,
                         headers: {
-                            "Accept-Encoding": "gzip",
+                            "Accept-Encoding": "gzip,br",
                             "Accept": "application/json"
                         },
                         onload: function (response) {
@@ -461,7 +451,7 @@
                 return fetch(url, {
                     method: 'GET',
                     headers: {
-                        "Accept-Encoding": "gzip",
+                        "Accept-Encoding": "gzip,br",
                         "Accept": "application/json",
                         "User-Agent": navigator.userAgent
                     }
@@ -478,23 +468,18 @@
             let animeName;
             let anime_id = -1;
             let episode;
-            if (item.Type == 'Episode') {
-                _id = item.SeasonId;
-                animeName = item.SeriesName;
-                episode = item.IndexNumber;
-                let session = item.ParentIndexNumber;
-                if (session != 1) {
-                    animeName += ' ' + session;
-                }
-            } else {
-                _id = item.Id;
-                animeName = item.Name;
-                episode = '';
+            _id = item.SeasonId || item.Id;
+            animeName = item.SeriesName || item.Name;
+            episode = item.IndexNumber || 1;
+            let session = item.ParentIndexNumber;
+            if (session > 1) {
+                animeName += session;
             }
             let _id_key = '_anime_id_rel_' + _id;
             let _name_key = '_anime_name_rel_' + _id;
             let _episode_key = '_episode_id_rel_' + _id + '_' + episode;
             if (is_auto) {
+                //优先使用记忆设置
                 if (window.localStorage.getItem(_episode_key)) {
                     const episodeInfo = JSON.parse(window.localStorage.getItem(_episode_key));
                     window.ede.episode_info_str = episodeInfo.animeTitle + '\n' + episodeInfo.episodeTitle;
@@ -512,9 +497,6 @@
             }
 
             let searchUrl = apiPrefix + 'https://api.dandanplay.net/api/v2/search/episodes?anime=' + animeName + '&withRelated=true';
-            if (is_auto && episode.toString().length > 0) {
-                searchUrl += '&episode=' + episode;
-            }
             let animaInfo = await makeGetRequest(searchUrl)
                 .then((response) => isInTampermonkey ? JSON.parse(response) : response.json())
                 .catch((error) => {
@@ -538,21 +520,24 @@
             if (!is_auto) {
                 let anime_lists_str = list2string(animaInfo);
                 showDebugInfo(anime_lists_str);
-                selecAnime_id = prompt('选择:\n' + anime_lists_str, selecAnime_id);
+                selecAnime_id = prompt('选择节目:\n' + anime_lists_str, selecAnime_id);
                 selecAnime_id = parseInt(selecAnime_id) - 1;
                 window.localStorage.setItem(_id_key, animaInfo.animes[selecAnime_id].animeId);
                 window.localStorage.setItem(_name_key, animaInfo.animes[selecAnime_id].animeTitle);
                 let episode_lists_str = ep2string(animaInfo.animes[selecAnime_id].episodes);
-                episode = prompt('确认集数:\n' + episode_lists_str, parseInt(episode) || 1);
+                episode = prompt('选择剧集:\n' + episode_lists_str, parseInt(episode) || 1);
                 episode = parseInt(episode) - 1;
             } else {
                 selecAnime_id = parseInt(selecAnime_id) - 1;
-                episode = 0;
+                let initialTitle = animaInfo.animes[selecAnime_id].episodes[0].episodeTitle;
+                const match = initialTitle.match(/第(\d+)话/);
+                const initialep = match ? parseInt(match[1]) : 0;
+                episode = (parseInt(episode) < initialep) ? parseInt(episode) - 1 : (parseInt(episode) - initialep);
             }
             let episodeInfo = {
                 episodeId: animaInfo.animes[selecAnime_id].episodes[episode].episodeId,
                 animeTitle: animaInfo.animes[selecAnime_id].animeTitle,
-                episodeTitle: animaInfo.animes[selecAnime_id].type == 'tvseries' ? animaInfo.animes[selecAnime_id].episodes[episode].episodeTitle : null,
+                episodeTitle: animaInfo.animes[selecAnime_id].type === 'tvseries' ? animaInfo.animes[selecAnime_id].episodes[episode].episodeTitle : (animaInfo.animes[selecAnime_id].type === 'movie' ? '剧场版' : 'Other'),
             };
             window.localStorage.setItem(_episode_key, JSON.stringify(episodeInfo));
             window.ede.episode_info_str = episodeInfo.animeTitle + '\n' + episodeInfo.episodeTitle;
@@ -676,16 +661,16 @@
             window.ede.obMutation.observe(_media, { attributes: true });
 
             if (!window.obVideo) {
-                window.obVideo = new MutationObserver((mutationList, observer) => {
+                window.obVideo = new MutationObserver((mutationList, _observer) => {
                     for (let mutationRecord of mutationList) {
                         if (mutationRecord.removedNodes) {
-                          for (let removedNode of mutationRecord.removedNodes) {
-                            if (removedNode.className && removedNode.classList.contains('videoPlayerContainer')) {
-                                console.log('Video Removed');
-                                window.ede.loading = false;
-                                return;
+                            for (let removedNode of mutationRecord.removedNodes) {
+                                if (removedNode.className && removedNode.classList.contains('videoPlayerContainer')) {
+                                    console.log('Video Removed');
+                                    window.ede.loading = false;
+                                    return;
+                                }
                             }
-                          }
                         }
                     }
                 });
@@ -734,7 +719,7 @@
                     window.ede.loading = false;
                     const danmakuCtr = document.getElementById('danmakuCtr');
                     if (danmakuCtr && danmakuCtr.style && danmakuCtr.style.opacity !== '1') {
-                         danmakuCtr.style.opacity = 1;
+                        danmakuCtr.style.opacity = 1;
                     }
                 });
         }
@@ -789,13 +774,6 @@
                         mode,
                         time: values[0] * 1,
                         style: {
-                            // For DOMRenderer:
-                            // fontSize: `${fontSize}px`,
-                            // color: `#${color}`,
-                            // textShadow:
-                            //     color === '00000' ? '-1px -1px #fff, -1px 1px #fff, 1px -1px #fff, 1px 1px #fff' : '-1px -1px #000, -1px 1px #000, 1px -1px #000, 1px 1px #000',
-
-                            // For CanvasRenderer:
                             font: `${fontSize}px sans-serif`,
                             fillStyle: `#${color}`,
                             strokeStyle: color === '000000' ? '#fff' : '#000',
