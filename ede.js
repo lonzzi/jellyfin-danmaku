@@ -3,7 +3,7 @@
 // @description  Jellyfin弹幕插件
 // @namespace    https://github.com/RyoLee
 // @author       RyoLee
-// @version      1.18
+// @version      1.19
 // @copyright    2022, RyoLee (https://github.com/RyoLee)
 // @license      MIT; https://raw.githubusercontent.com/Izumiko/jellyfin-danmaku/jellyfin/LICENSE
 // @icon         https://github.githubassets.com/pinned-octocat.svg
@@ -38,7 +38,7 @@
         const filter_icons = ['filter_none', 'filter_1', 'filter_2', 'filter_3'];
         const source_icon = 'library_add';
         const log_icon = 'import_contacts';
-        const settings_icon = 'settings'
+        const settings_icon = 'tune'
         const spanClass = 'xlargePaperIconButton material-icons ';
         const buttonOptions = {
             class: 'paper-icon-button-light',
@@ -63,7 +63,6 @@
                 document.querySelector('#displayDanmaku').children[0].className = spanClass + danmaku_icons[window.ede.danmakuSwitch];
                 if (window.ede.danmaku) {
                     window.ede.danmakuSwitch == 1 ? window.ede.danmaku.show() : window.ede.danmaku.hide();
-                    reloadDanmaku('reload');
                 }
             },
         };
@@ -99,11 +98,11 @@
         };
 
         const filterButtonOpts = {
-            title: '过滤等级',
+            title: '密度限制',
             id: 'filteringDanmaku',
             class: '',
             onclick: () => {
-                showDebugInfo('切换弹幕过滤等级');
+                showDebugInfo('切换弹幕密度限制等级');
                 let level = window.localStorage.getItem('danmakuFilterLevel');
                 level = ((level ? parseInt(level) : 0) + 1) % 4;
                 window.localStorage.setItem('danmakuFilterLevel', level);
@@ -157,7 +156,7 @@
                 let speedStr = prompt("请输入0-1000弹幕速度（如200）", window.ede.speed || 200);
                 let sizeStr = prompt("请输入1-30弹幕大小（如18）", window.ede.fontSize || 18);
                 let heightRatio = prompt("请输入0-1之间的弹幕高度屏幕占比（如0.7）", window.ede.heightRatio || 0.7)
-                if (!opacityStr || !speedStr) return;
+                let tmpFiltersender = prompt("请输入需要过滤的弹幕来源（如bgdo）", window.ede.danmakufilter || '00')
                 if (window.ede) {
                     try {
                         let tmpOpacity = parseFloatOfRange(opacityStr, 0, 1);
@@ -183,6 +182,10 @@
                         window.ede.heightRatio = tmpHeightRatio;
                         showDebugInfo(`设置弹幕高度：${window.ede.heightRatio}`);
                         window.localStorage.setItem('danmakuheight', window.ede.heightRatio.toString());
+                        //设置弹幕过滤
+                        window.ede.danmakufilter = tmpFiltersender.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+                        showDebugInfo(`设置弹幕过滤：${window.ede.danmakufilter}`);
+                        window.localStorage.setItem('danmakufilter', window.ede.danmakufilter);
                         //Reload
                         reloadDanmaku('reload');
                     } catch (e) {
@@ -232,6 +235,7 @@
                 this.fontSize = sizeRecord ? parseFloatOfRange(sizeRecord, 0.0, 50.0) : 18
                 let heightRecord = window.localStorage.getItem('danmakuheight')
                 this.heightRatio = heightRecord ? parseFloatOfRange(heightRecord, 0.0, 1.0) : 0.7
+                this.danmakufilter = window.localStorage.getItem('danmakufilter') ?? 'ZZZ000';
                 this.danmaku = null;
                 this.episode_info = null;
                 this.episode_info_str = '';
@@ -367,7 +371,7 @@
         }
 
         async function initConfig() {
-            showDebugInfo('serverInfo');
+            showDebugInfo('获取服务器信息');
             let token = serversInfo[0].AccessToken;
             userId = serversInfo[0].UserId;
 
@@ -376,7 +380,7 @@
                 sessionUrl += '&DeviceId=' + deviceId;
             }
 
-            showDebugInfo('Get DevId');
+            showDebugInfo('尝试获取DevId');
             let sessionInfo = await fetch(sessionUrl, {
                 "credentials": "include",
                 "headers": {
@@ -409,7 +413,6 @@
                 while (!playingInfo) {
                     await new Promise((resolve) => setTimeout(resolve, 200));
                     let sessionUrl = baseUrl + '/Sessions?ControllableByUserId=' + userId + '&deviceId=' + deviceId;
-                    showDebugInfo(sessionUrl);
                     let sessionInfo = await fetch(sessionUrl, {
                         "credentials": "include",
                         "headers": {
@@ -531,7 +534,7 @@
                 selecAnime_id = parseInt(selecAnime_id) - 1;
                 let initialTitle = animaInfo.animes[selecAnime_id].episodes[0].episodeTitle;
                 const match = initialTitle.match(/第(\d+)话/);
-                const initialep = match ? parseInt(match[1]) : 0;
+                const initialep = match ? parseInt(match[1]) : 1;
                 episode = (parseInt(episode) < initialep) ? parseInt(episode) - 1 : (parseInt(episode) - initialep);
             }
             let episodeInfo = {
@@ -598,6 +601,7 @@
             showDebugInfo(`弹幕透明度：${window.ede.opacity}`);
             showDebugInfo(`弹幕速度：${window.ede.speed}`);
             showDebugInfo(`弹幕高度比例：${window.ede.heightRatio}`);
+            showDebugInfo(`弹幕来源过滤：${window.ede.danmakufilter}`);
 
             while (!document.querySelector(mediaContainerQueryStr)) {
                 await new Promise((resolve) => setTimeout(resolve, 200));
@@ -643,7 +647,7 @@
             }
             window.ede.obResize = new ResizeObserver(() => {
                 if (window.ede.danmaku) {
-                    showDebugInfo('Resizing');
+                    showDebugInfo('重设容器大小');
                     window.ede.danmaku.resize();
                 }
             });
@@ -654,7 +658,7 @@
             }
             window.ede.obMutation = new MutationObserver(() => {
                 if (window.ede.danmaku && document.querySelector(mediaQueryStr)) {
-                    showDebugInfo('Video Changed');
+                    showDebugInfo('探测播放媒体变化');
                     reloadDanmaku('reload');
                 }
             });
@@ -743,7 +747,6 @@
                 if (!vertical_comments[i_v]) {
                     vertical_comments[i_v] = [];
                 }
-                // TODO: 屏蔽过滤
                 if (vertical_comments[i_v].length < vertical_limit) {
                     vertical_comments[i_v].push(element);
                 } else {
@@ -756,15 +759,38 @@
             return arr_comments.flat();
         }
 
+
         function danmakuParser($obj) {
-            // const fontSize = Math.round(((window.screen.height > window.screen.width ? window.screen.width : window.screen.height) / 1080) * 18);
-            const fontSize = window.ede.fontSize; // font size is buggy on mobile, use fixed size instead
+            const fontSize = window.ede.fontSize;
             showDebugInfo('Screen: ' + window.screen.width + 'x' + window.screen.height);
-            showDebugInfo('fontSize: ' + fontSize);
+            showDebugInfo('字号大小: ' + fontSize);
             return $obj
+                .filter(($comment) => {
+                    const senderInfo = $comment.p.split(',').pop();
+                    if (window.ede.danmakufilter.includes('D')) {
+                        if (!/^\[/.test(senderInfo)) {
+                            return false;
+                        }
+                    }
+                    if (window.ede.danmakufilter.includes('O')) {
+                        if (/^\[(?!BiliBili|Gamer\])/.test(senderInfo)) {
+                            return false;
+                        }
+                    }
+                    if (window.ede.danmakufilter.includes('B')) {
+                        if (senderInfo.startsWith('[BiliBili]')) {
+                            return false;
+                        }
+                    }
+                    if (window.ede.danmakufilter.includes('G')) {
+                        if (senderInfo.startsWith('[Gamer]')) {
+                            return false;
+                        }
+                    }
+                    return true;
+                })
                 .map(($comment) => {
                     const p = $comment.p;
-                    //if (p === null || $comment.childNodes[0] === undefined) return null
                     const values = p.split(',');
                     const mode = { 6: 'ltr', 1: 'rtl', 5: 'top', 4: 'bottom' }[values[1]];
                     if (!mode) return null;
@@ -780,8 +806,7 @@
                             lineWidth: 2.0,
                         },
                     };
-                })
-                .filter((x) => x);
+                });
         }
 
         function list2string($obj2) {
@@ -811,6 +836,7 @@
         while (!document.querySelector('.htmlvideoplayer')) {
             await new Promise((resolve) => setTimeout(resolve, 200));
         }
+
         if (!window.ede) {
             window.ede = new EDE();
             setInterval(() => {
