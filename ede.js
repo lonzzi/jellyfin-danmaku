@@ -3,7 +3,7 @@
 // @description  Jellyfin弹幕插件
 // @namespace    https://github.com/RyoLee
 // @author       RyoLee
-// @version      1.19
+// @version      1.20
 // @copyright    2022, RyoLee (https://github.com/RyoLee)
 // @license      MIT; https://raw.githubusercontent.com/Izumiko/jellyfin-danmaku/jellyfin/LICENSE
 // @icon         https://github.githubassets.com/pinned-octocat.svg
@@ -24,7 +24,7 @@
         let authorization = '';
         let userId = '';
         let isInTampermonkey = true;
-        let apiPrefix = 'https://api.9-ch.com/cors/';
+        let apiPrefix = 'https://ddplay-api.930524.xyz/cors/';
         const debugInfoLoc = 'ui'; // 'console' or 'ui'
         let logQueue = [];
         let logLines = 0;
