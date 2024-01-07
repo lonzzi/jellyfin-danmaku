@@ -5,18 +5,18 @@
 
 ## 安装
 
-任选以下一种方式安装即可，**前两种推荐方式可以持久化。**
+任选以下一种方式安装即可，**方式1-3可以持久化。**
 
 **注：** 安装完首次使用时，确保只有当前一个客户端访问服务器，以方便根据当前用户id获取Session时能唯一定位到当前客户端设备id。（主要是由于非Jellyfin Web客户端没有默认在localstorage中存储DeviceID）
 
-### 浏览器插件(推荐)
+### 1. 浏览器插件(推荐)
 
 1. [安装Tampermonkey插件](https://www.tampermonkey.net/)
 2. [添加脚本](https://jellyfin-danmaku.pages.dev/ede.user.js)
 
-### 反向代理处理(推荐)
+### 2. 反向代理处理(推荐)
 
-#### Nginx
+#### 2.1 Nginx
 使用Nginx反向代理`Jellyfin`并在`location`块中插入:
 ```
 proxy_set_header Accept-Encoding "";
@@ -25,7 +25,7 @@ sub_filter_once on;
 ```
 - [`完整示例`](https://github.com/Izumiko/jellyfin-danmaku/issues/8)
 
-#### Caddy
+#### 2.2 Caddy
 
 下载Caddy二进制文件时，增加第三方模块[`sjtug/caddy2-filter`](https://github.com/sjtug/caddy2-filter)，之后，在`Caddyfile`中按如下内容修改
 ```
@@ -48,7 +48,41 @@ example.com {
 }
 ```
 
-### 修改服务端
+### 3. 修改服务端启动命令
+[思路来源](https://github.com/Izumiko/jellyfin-danmaku/issues/20)
+
+#### 3.1 Docker模式启动的服务端
+官方镜像的Entrypoint是`/jellyfin/jellyfin`，`hotio/jellyfin`镜像的Entrypoint是`/init`，可在`docker-compose.yml`的jellyfin部分增加一行如下代码，用带sed的Entrypoint替换默认的Entrypoint。
+
+官方镜像：
+```
+entrypoint: sed -i 's#</div></body>#</div><script src="https://jellyfin-danmaku.pages.dev/ede.user.js" defer></script></body>#' /jellyfin/jellyfin-web/index.html && /jellyfin/jellyfin
+```
+
+`hotio/jellyfin`镜像：
+```
+entrypoint: sed -i 's#</div></body>#</div><script src="https://jellyfin-danmaku.pages.dev/ede.user.js" defer></script></body>#' /usr/share/jellyfin/web/index.html && /init
+```
+
+#### 3.2 直接用包管理器安装，并使用systemd管理的服务端
+部分用户使用deb包或者Arch Linux的aur包安装Jellyfin，可以修改systemd service文件来实现启动时追加js脚本。
+运行`systemctl edit jellyfin.service`，进入编辑界面，然后输入如下内容：
+
+deb包安装的版本：
+```
+[Service]
+ExecStartPre=-/usr/bin/sed -i 's#</div></body>#</div><script src="https://jellyfin-danmaku.pages.dev/ede.user.js" defer></script></body>#' /usr/share/jellyfin/web/index.html
+```
+
+aur安装的版本：
+```
+[Service]
+ExecStartPre=-/usr/bin/sed -i 's#</div></body>#</div><script src="https://jellyfin-danmaku.pages.dev/ede.user.js" defer></script></body>#' /usr/lib/jellyfin/jellyfin-web/index.html
+```
+
+保存后，运行`systemctl daemon-reload`生效，`systemctl restart jellyfin`重启当前服务。
+
+### 4. 修改服务端
 
 修改文件 `/usr/share/jellyfin/web/index.html`
 *(Default)*
@@ -76,7 +110,7 @@ sed -i 's#</body>#<script src="https://jellyfin-danmaku.pages.dev/ede.user.js" d
 
 该方式安装与浏览器插件安装**可同时使用不冲突**
 
-### 修改客户端
+### 5. 修改客户端
 
 类似服务端方式,解包后修改 dashboard-ui/index.html 再重新打包即可,iOS 需要通过类似 AltStore 方式自签,请自行 Google 解决
 
