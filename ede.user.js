@@ -12,7 +12,10 @@
 // @grant        GM_xmlhttpRequest
 // @connect      *
 // @match        *://*/*/web/index.html
+// @match        *://*/*/web/
 // @match        *://*/web/index.html
+// @match        *://*/web/
+// @match        https://jellyfin-web.pages.dev/
 // ==/UserScript==
 
 (async function () {
@@ -29,7 +32,11 @@
         const debugInfoLoc = 'ui'; // 'console' or 'ui'
         let logQueue = [];
         let logLines = 0;
-        const baseUrl = window.location.origin + window.location.pathname.replace('/web/index.html', '');
+        const jellyfinCredentials = JSON.parse(localStorage.getItem('jellyfin_credentials'));
+        let baseUrl = jellyfinCredentials.Servers[0].ManualAddress;
+        if (!baseUrl) {
+            baseUrl = window.location.origin + window.location.pathname.replace('/web/index.html', '');
+        }
         const check_interval = 200;
         const chConverTtitle = ['当前状态: 未启用翻译', '当前状态: 转换为简体', '当前状态: 转换为繁体'];
         // 0:当前状态关闭 1:当前状态打开
@@ -39,7 +46,7 @@
         const filter_icons = ['filter_none', 'filter_1', 'filter_2', 'filter_3'];
         const source_icon = 'library_add';
         const log_icon = 'import_contacts';
-        const settings_icon = 'tune'
+        const settings_icon = 'tune';
         const spanClass = 'xlargePaperIconButton material-icons ';
         const buttonOptions = {
             class: 'paper-icon-button-light',
@@ -127,7 +134,7 @@
                     });
                 }
             },
-        }
+        };
 
         const logButtonOpts = {
             title: '日志开关',
@@ -145,7 +152,7 @@
                 if (logSpan) {
                     window.ede.logSwitch == 1 ? (logSpan.style.display = 'block') : (logSpan.style.display = 'none');
                 }
-            }
+            },
         };
 
         const danmakuInteractionOpts = {
@@ -153,11 +160,11 @@
             id: 'danmakuSettings',
             class: settings_icon,
             onclick: () => {
-                let opacityStr = prompt("请输入0-1之间的透明度值（如0.7）", window.ede.opacity || 0.7);
-                let speedStr = prompt("请输入0-1000弹幕速度（如200）", window.ede.speed || 200);
-                let sizeStr = prompt("请输入1-30弹幕大小（如18）", window.ede.fontSize || 18);
-                let heightRatio = prompt("请输入0-1之间的弹幕高度屏幕占比（如0.7）", window.ede.heightRatio || 0.7)
-                let tmpFiltersender = prompt("请输入需要过滤的弹幕来源（如bgdo）", window.ede.danmakufilter || '00')
+                let opacityStr = prompt('请输入0-1之间的透明度值（如0.7）', window.ede.opacity || 0.7);
+                let speedStr = prompt('请输入0-1000弹幕速度（如200）', window.ede.speed || 200);
+                let sizeStr = prompt('请输入1-30弹幕大小（如18）', window.ede.fontSize || 18);
+                let heightRatio = prompt('请输入0-1之间的弹幕高度屏幕占比（如0.7）', window.ede.heightRatio || 0.7);
+                let tmpFiltersender = prompt('请输入需要过滤的弹幕来源（如bgdo）', window.ede.danmakufilter || '00');
                 if (window.ede) {
                     try {
                         let tmpOpacity = parseFloatOfRange(opacityStr, 0, 1);
@@ -194,10 +201,8 @@
                         showDebugInfo(e);
                     }
                 }
-            }
+            },
         };
-
-
 
         // ------ configs end------
         /* eslint-disable */
@@ -207,7 +212,7 @@
         /* eslint-enable */
 
         // 检测是否在Tampermonkey中运行
-        if (typeof GM_addStyle === 'undefined') {
+        if (typeof GM_xmlhttpRequest === 'undefined') {
             isInTampermonkey = false;
         } else {
             apiPrefix = '';
@@ -228,14 +233,14 @@
                 if (window.localStorage.getItem('logSwitch')) {
                     this.logSwitch = parseInt(window.localStorage.getItem('logSwitch'));
                 }
-                let opacityRecord = window.localStorage.getItem('danmakuopacity')
-                this.opacity = opacityRecord ? parseFloatOfRange(opacityRecord, 0.0, 1.0) : 0.7
-                let speedRecord = window.localStorage.getItem('danmakuspeed')
-                this.speed = speedRecord ? parseFloatOfRange(speedRecord, 0.0, 1000.0) : 200
-                let sizeRecord = window.localStorage.getItem('danmakusize')
-                this.fontSize = sizeRecord ? parseFloatOfRange(sizeRecord, 0.0, 50.0) : 18
-                let heightRecord = window.localStorage.getItem('danmakuheight')
-                this.heightRatio = heightRecord ? parseFloatOfRange(heightRecord, 0.0, 1.0) : 0.7
+                let opacityRecord = window.localStorage.getItem('danmakuopacity');
+                this.opacity = opacityRecord ? parseFloatOfRange(opacityRecord, 0.0, 1.0) : 0.7;
+                let speedRecord = window.localStorage.getItem('danmakuspeed');
+                this.speed = speedRecord ? parseFloatOfRange(speedRecord, 0.0, 1000.0) : 200;
+                let sizeRecord = window.localStorage.getItem('danmakusize');
+                this.fontSize = sizeRecord ? parseFloatOfRange(sizeRecord, 0.0, 50.0) : 18;
+                let heightRecord = window.localStorage.getItem('danmakuheight');
+                this.heightRatio = heightRecord ? parseFloatOfRange(heightRecord, 0.0, 1.0) : 0.7;
                 this.danmakufilter = window.localStorage.getItem('danmakufilter') ?? 'ZZZ000';
                 this.danmaku = null;
                 this.episode_info = null;
@@ -246,8 +251,7 @@
             }
         }
 
-        const parseFloatOfRange = (str, lb, hb) => Math.min(Math.max(parseFloat(str), lb), hb)
-
+        const parseFloatOfRange = (str, lb, hb) => Math.min(Math.max(parseFloat(str), lb), hb);
 
         function createButton(opt) {
             let button = document.createElement('button');
@@ -377,21 +381,37 @@
             let token = serversInfo[0].AccessToken;
             userId = serversInfo[0].UserId;
 
-            let sessionUrl = baseUrl + '/Sessions?ControllableByUserId=' + userId
+            let sessionUrl = baseUrl + '/Sessions?ControllableByUserId=' + userId;
             if (deviceId) {
                 sessionUrl += '&DeviceId=' + deviceId;
             }
 
             showDebugInfo('尝试获取DevId');
-            let sessionInfo = await fetch(sessionUrl, {
-                "credentials": "include",
-                "headers": {
-                    "Accept": "application/json",
-                    "Authorization": "MediaBrowser Token=\"" + token + "\""
-                },
-                "method": "GET",
-                "mode": "cors"
-            }).then(res => res.json());
+            let sessionInfo = null;
+            if (isInTampermonkey) {
+                const result = await GM.xmlHttpRequest({
+                    method: 'GET',
+                    url: sessionUrl,
+                    headers: {
+                        Accept: 'application/json',
+                        Authorization: 'MediaBrowser Token="' + token + '"',
+                    },
+                    onload: function (response) {
+                        console.log(JSON.parse(response.responseText));
+                    },
+                });
+                sessionInfo = JSON.parse(result.responseText);
+            } else {
+                sessionInfo = await fetch(sessionUrl, {
+                    credentials: 'include',
+                    headers: {
+                        Accept: 'application/json',
+                        Authorization: 'MediaBrowser Token="' + token + '"',
+                    },
+                    method: 'GET',
+                    mode: 'cors',
+                }).then((res) => res.json());
+            }
 
             if (!deviceId) {
                 deviceId = sessionInfo[0].DeviceId;
@@ -402,10 +422,10 @@
             let deviceName = sessionInfo[0].DeviceName;
             let serverVersion = sessionInfo[0].ApplicationVersion;
             // Ref: https://gist.github.com/nielsvanvelzen/ea047d9028f676185832e51ffaf12a6f
-            authorization = "MediaBrowser Client=\"" + clientName + "\", Device=\"" + deviceName + "\", DeviceId=\"" + deviceId + "\", Version=\"" + serverVersion + "\", Token=\"" + token + "\"";
+            authorization =
+                'MediaBrowser Client="' + clientName + '", Device="' + deviceName + '", DeviceId="' + deviceId + '", Version="' + serverVersion + '", Token="' + token + '"';
             return deviceId;
         }
-
 
         async function getEmbyItemInfo() {
             showDebugInfo('准备获取Item信息');
@@ -415,15 +435,29 @@
                 while (!playingInfo) {
                     await new Promise((resolve) => setTimeout(resolve, 200));
                     let sessionUrl = baseUrl + '/Sessions?ControllableByUserId=' + userId + '&deviceId=' + deviceId;
-                    let sessionInfo = await fetch(sessionUrl, {
-                        "credentials": "include",
-                        "headers": {
-                            "Accept": "application/json",
-                            "Authorization": authorization
-                        },
-                        "method": "GET",
-                        "mode": "cors"
-                    }).then(res => res.json());
+                    let sessionInfo = null;
+                    if (isInTampermonkey) {
+                        const result = await GM.xmlHttpRequest({
+                            method: 'GET',
+                            url: sessionUrl,
+                            headers: {
+                                Accept: 'application/json',
+                                Authorization: authorization,
+                            },
+                        });
+                        sessionInfo = JSON.parse(result.responseText);
+                    } else {
+                        sessionInfo = await fetch(sessionUrl, {
+                            credentials: 'include',
+                            headers: {
+                                Accept: 'application/json',
+                                Authorization: authorization,
+                            },
+                            method: 'GET',
+                            mode: 'cors',
+                        }).then((res) => res.json());
+                    }
+
                     playingInfo = sessionInfo[0].NowPlayingItem;
                 }
                 showDebugInfo('成功 ' + (playingInfo.SeriesName || playingInfo.Name));
@@ -438,29 +472,29 @@
             if (isInTampermonkey) {
                 return new Promise((resolve, reject) => {
                     GM_xmlhttpRequest({
-                        method: "GET",
+                        method: 'GET',
                         url: url,
                         headers: {
-                            "Accept-Encoding": "gzip,br",
-                            "Accept": "application/json"
+                            'Accept-Encoding': 'gzip,br',
+                            Accept: 'application/json',
                         },
                         onload: function (response) {
                             resolve(response.responseText);
                         },
                         onerror: function (error) {
                             reject(error);
-                        }
+                        },
                     });
                 });
             } else {
                 return fetch(url, {
                     method: 'GET',
                     headers: {
-                        "Accept-Encoding": "gzip,br",
-                        "Accept": "application/json",
-                        "User-Agent": navigator.userAgent
-                    }
-                })
+                        'Accept-Encoding': 'gzip,br',
+                        Accept: 'application/json',
+                        'User-Agent': navigator.userAgent,
+                    },
+                });
             }
         }
 
@@ -503,7 +537,7 @@
 
             let searchUrl = apiPrefix + 'https://api.dandanplay.net/api/v2/search/episodes?anime=' + animeName + '&withRelated=true';
             let animaInfo = await makeGetRequest(searchUrl)
-                .then((response) => isInTampermonkey ? JSON.parse(response) : response.json())
+                .then((response) => (isInTampermonkey ? JSON.parse(response) : response.json()))
                 .catch((error) => {
                     showDebugInfo('查询失败:', error);
                     return null;
@@ -537,12 +571,17 @@
                 let initialTitle = animaInfo.animes[selecAnime_id].episodes[0].episodeTitle;
                 const match = initialTitle.match(/第(\d+)话/);
                 const initialep = match ? parseInt(match[1]) : 1;
-                episode = (parseInt(episode) < initialep) ? parseInt(episode) - 1 : (parseInt(episode) - initialep);
+                episode = parseInt(episode) < initialep ? parseInt(episode) - 1 : parseInt(episode) - initialep;
             }
             let episodeInfo = {
                 episodeId: animaInfo.animes[selecAnime_id].episodes[episode].episodeId,
                 animeTitle: animaInfo.animes[selecAnime_id].animeTitle,
-                episodeTitle: animaInfo.animes[selecAnime_id].type === 'tvseries' ? animaInfo.animes[selecAnime_id].episodes[episode].episodeTitle : (animaInfo.animes[selecAnime_id].type === 'movie' ? '剧场版' : 'Other'),
+                episodeTitle:
+                    animaInfo.animes[selecAnime_id].type === 'tvseries'
+                        ? animaInfo.animes[selecAnime_id].episodes[episode].episodeTitle
+                        : animaInfo.animes[selecAnime_id].type === 'movie'
+                        ? '剧场版'
+                        : 'Other',
             };
             window.localStorage.setItem(_episode_key, JSON.stringify(episodeInfo));
             window.ede.episode_info_str = episodeInfo.animeTitle + '\n' + episodeInfo.episodeTitle;
@@ -552,7 +591,7 @@
         function getComments(episodeId) {
             let url = apiPrefix + 'https://api.dandanplay.net/api/v2/comment/' + episodeId + '?withRelated=true&chConvert=' + window.ede.chConvert;
             return makeGetRequest(url)
-                .then((response) => isInTampermonkey ? JSON.parse(response) : response.json())
+                .then((response) => (isInTampermonkey ? JSON.parse(response) : response.json()))
                 .then((data) => {
                     showDebugInfo('弹幕下载成功: ' + data.comments.length);
                     return data.comments;
@@ -569,7 +608,7 @@
             let comments = [];
             for (let i = 0; i < 2; i++) {
                 comments = makeGetRequest(url)
-                    .then((response) => isInTampermonkey ? JSON.parse(response) : response.json())
+                    .then((response) => (isInTampermonkey ? JSON.parse(response) : response.json()))
                     .then((data) => {
                         showDebugInfo('弹幕下载成功: ' + data.comments.length);
                         return data.comments;
@@ -758,7 +797,6 @@
             }
             return arr_comments.flat();
         }
-
 
         function danmakuParser($obj) {
             const fontSize = window.ede.fontSize;
