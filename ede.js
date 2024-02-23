@@ -172,8 +172,8 @@
                             </div>
                         </div>
                         <div style="display: flex; justify-content: space-between; margin-top: 10px;">
-                            <button id="saveSettings">保存设置</button>
-                            <button id="cancelSettings">取消</button>
+                            <button id="saveSettings" class="raised button-submit block btnSave formDialogFooterItem emby-button">保存设置</button>
+                            <button id="cancelSettings" class="raised button-cancel block btnCancel formDialogFooterItem emby-button">取消</button>
                         </div>
                     </div>`;
                 document.body.appendChild(modal);
