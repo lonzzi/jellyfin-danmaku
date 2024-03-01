@@ -152,5 +152,10 @@ sed -i 's#</body>#<script src="https://jellyfin-danmaku.pages.dev/ede.user.js" d
 
 **首次播放时请检查当前弹幕信息是否正确匹配,若匹配错误请尝试手动匹配**
 
+## 鸣谢
+
+感谢JetBrains [OpenSourceSupport](https://jb.gg/OpenSourceSupport)所提供的支持
+
+![JetBrains Logo (Main) logo](https://resources.jetbrains.com/storage/products/company/brand/logos/jb_beam.svg)
 
 [![Stargazers over time](https://starchart.cc/Izumiko/jellyfin-danmaku.svg)](https://starchart.cc/Izumiko/jellyfin-danmaku)
