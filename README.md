@@ -78,7 +78,7 @@ sub_filter_once on;
 # 网站设置
 example.com {
     filter {
-        path .*/web/index.html.*
+        path .*/web/.*
         search_pattern </body>
         replacement "<script src=\"https://jellyfin-danmaku.pages.dev/ede.user.js\" defer></script></body>"
         content_type text/html
