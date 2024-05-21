@@ -1184,32 +1184,43 @@
             return comments;
         }
 
-        const limit = 9 - level * 2;
-        const verticalLimit = 6;
+        let _container = null;
+        document.querySelectorAll(mediaContainerQueryStr).forEach((element) => {
+            if (!element.classList.contains('hide')) {
+                _container = element;
+            }
+        });
+
+        const containerWidth = _container.offsetWidth;
+        const containerHeight = _container.offsetHeight * window.ede.heightRatio - 18;
+        const duration = Math.ceil(containerWidth / window.ede.speed);
+        const lines = Math.floor(containerHeight / window.ede.fontSize) - 1;
+
+        const limit = (9 - level * 2) * lines;
+        const verticalLimit = lines - 1 > 0 ? lines - 1 : 1;
         const resultComments = [];
 
         const timeBuckets = {};
         const verticalTimeBuckets = {};
 
         comments.forEach(comment => {
-            const timeIndex = Math.ceil(comment.time);
-            const verticalTimeIndex = Math.ceil(comment.time / 3);
+            const timeIndex = Math.ceil(comment.time / duration);
 
             if (!timeBuckets[timeIndex]) {
-                timeBuckets[timeIndex] = [];
+                timeBuckets[timeIndex] = 0;
             }
-            if (!verticalTimeBuckets[verticalTimeIndex]) {
-                verticalTimeBuckets[verticalTimeIndex] = [];
+            if (!verticalTimeBuckets[timeIndex]) {
+                verticalTimeBuckets[timeIndex] = 0;
             }
 
             if (comment.mode === 'top' || comment.mode === 'bottom') {
-                if (verticalTimeBuckets[verticalTimeIndex].length < verticalLimit) {
-                    verticalTimeBuckets[verticalTimeIndex].push(comment);
+                if (verticalTimeBuckets[timeIndex] < verticalLimit) {
+                    verticalTimeBuckets[timeIndex]++;
                     resultComments.push(comment);
                 }
             } else {
-                if (timeBuckets[timeIndex].length < limit) {
-                    timeBuckets[timeIndex].push(comment);
+                if (timeBuckets[timeIndex] < limit) {
+                    timeBuckets[timeIndex]++;
                     resultComments.push(comment);
                 }
             }
