@@ -3,7 +3,7 @@
 // @description  Jellyfin弹幕插件
 // @namespace    https://github.com/RyoLee
 // @author       RyoLee
-// @version      1.39
+// @version      1.40
 // @copyright    2022, RyoLee (https://github.com/RyoLee)
 // @license      MIT; https://raw.githubusercontent.com/Izumiko/jellyfin-danmaku/jellyfin/LICENSE
 // @icon         https://github.githubassets.com/pinned-octocat.svg
@@ -959,12 +959,6 @@
                     data = isInTampermonkey ? JSON.parse(response) : await response.json();
                     comments = comments.concat(data.comments);
                 }
-                // 去重
-                comments = comments.filter((comment, index, self) =>
-                    index === self.findIndex((t) => (
-                        t.cid === comment.cid
-                    ))
-                );
             }
             showDebugInfo('弹幕下载成功: ' + comments.length);
             return comments;
@@ -1229,7 +1223,7 @@
         return resultComments;
     }
 
-    function danmakuParser($obj) {
+    function danmakuParser(all_cmts) {
         const { fontSize, danmakufilter } = window.ede;
 
         const disableBilibili = (danmakufilter & 1) === 1;
@@ -1245,18 +1239,18 @@
         if (filterule === '') { filterule = '!.*'; }
         const danmakufilterule = new RegExp(filterule);
 
-        return $obj
-            .filter(($comment) => {
-                return !danmakufilterule.test($comment.p.split(',').pop());
+        return all_cmts
+            .filter((comment, index, self) => {
+                return !danmakufilterule.test(comment.p.split(',').pop()) && index === self.findIndex((t) => t.cid === comment.cid);
             })
-            .map(($comment) => {
-                const [time, modeId, colorValue] = $comment.p.split(',').map((v, i) => i === 0 ? parseFloat(v) : parseInt(v, 10));
+            .map((comment) => {
+                const [time, modeId, colorValue] = comment.p.split(',').map((v, i) => i === 0 ? parseFloat(v) : parseInt(v, 10));
                 const mode = { 6: 'ltr', 1: 'rtl', 5: 'top', 4: 'bottom' }[modeId];
                 if (!mode) return null;
 
                 const color = `000000${colorValue.toString(16)}`.slice(-6);
                 return {
-                    text: $comment.m,
+                    text: comment.m,
                     mode,
                     time,
                     style: {
