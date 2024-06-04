@@ -954,11 +954,11 @@
                     }
                 }
                 // 获取第三方弹幕
-                for (const s of src) {
-                    response = await makeGetRequest(url_ext + encodeURIComponent(s));
-                    data = isInTampermonkey ? JSON.parse(response) : await response.json();
+                await Promise.all(src.map(async (s) => {
+                    const response = await makeGetRequest(url_ext + encodeURIComponent(s));
+                    const data = isInTampermonkey ? JSON.parse(response) : await response.json();
                     comments = comments.concat(data.comments);
-                }
+                }));
             }
             showDebugInfo('弹幕下载成功: ' + comments.length);
             return comments;
