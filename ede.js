@@ -1047,6 +1047,7 @@
         await waitForMediaContainer();
 
         let _container = null;
+        const reactRoot = document.getElementById('reactRoot');
         document.querySelectorAll(mediaContainerQueryStr).forEach((element) => {
             if (!element.classList.contains('hide')) {
                 _container = element;
@@ -1066,13 +1067,17 @@
 
         wrapper = document.createElement('div');
         wrapper.id = 'danmakuWrapper';
-        wrapper.style.position = 'absolute';
+        wrapper.style.position = 'fixed';
         wrapper.style.width = '100%';
         wrapper.style.height = `calc(${window.ede.heightRatio * 100}% - 18px)`;
         wrapper.style.opacity = window.ede.opacity;
         wrapper.style.top = '18px';
-        wrapper.style.overflow = 'hidden';
-        _container.prepend(wrapper);
+        wrapper.style.pointerEvents = 'none';
+        if (reactRoot) {
+            reactRoot.prepend(wrapper);
+        } else {
+            showDebugInfo('未找到video');
+        }
 
         window.ede.danmaku = new Danmaku({
             container: wrapper,
