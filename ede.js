@@ -191,6 +191,10 @@
                             <div><input type="radio" id="chConvert2" name="chConvert" value="2" ${(window.ede.chConvert === 2) ? 'checked' : ''}>
                                 <label for="chConvert2">繁体</label></div>
                         </div>
+                        <div style="display: flex;">
+                            <label style="flex: auto;">当前弹幕偏移时间:</label>
+                            <div><input style="flex-grow: 1;" id="danmakuOffsetTime" placeholder="秒" value="${window.ede.curEpOffset || 0}" /></div>
+                        </div>
                     </div>
                     <div style="display: flex; justify-content: space-between; margin-top: 10px;">
                         <button id="saveSettings" class="raised button-submit block btnSave formDialogFooterItem emby-button">保存设置</button>
@@ -252,6 +256,12 @@
                     window.ede.chConvert = parseInt(document.querySelector('input[name="chConvert"]:checked').value);
                     window.localStorage.setItem('chConvert', window.ede.chConvert);
                     showDebugInfo(`设置简繁转换：${window.ede.chConvert}`);
+                    const epOffset = parseFloat(document.getElementById('danmakuOffsetTime').value);
+                    window.ede.curEpOffsetModified = epOffset !== window.ede.curEpOffset;
+                    if (window.ede.curEpOffsetModified) {
+                        window.ede.curEpOffset = epOffset;
+                        showDebugInfo(`设置弹幕偏移时间：${window.ede.curEpOffset}`);
+                    }
                     reloadDanmaku('reload');
                     closeModal();
                 } catch (e) {
@@ -452,6 +462,9 @@
             // 弹幕密度限制等级 0:不限制 1:低 2:中 3:高
             const danmakuDensityLimit = window.localStorage.getItem('danmakuDensityLimit');
             this.danmakuDensityLimit = danmakuDensityLimit ? parseInt(danmakuDensityLimit) : 0;
+            // 当前剧集弹幕偏移时间
+            this.curEpOffset = 0;
+            this.curEpOffsetModified = false;
 
             this.danmaku = null;
             this.episode_info = null;
@@ -860,6 +873,11 @@
                 return null;
             }
         }
+        const _episode_key_offset = _episode_key + '_offset';
+        if (window.ede.curEpOffsetModified) {
+            window.localStorage.setItem(_episode_key_offset, window.ede.curEpOffset);
+        }
+        window.ede.curEpOffset = window.localStorage.getItem(_episode_key_offset) || 0;
 
         let searchUrl = apiPrefix + 'https://api.dandanplay.net/api/v2/search/episodes?anime=' + animeName + '&withRelated=true';
         let animaInfo = await makeGetRequest(searchUrl)
@@ -1057,6 +1075,7 @@
         showDebugInfo(`弹幕模式过滤：${window.ede.danmakuModeFilter}`);
         showDebugInfo(`弹幕字号：${window.ede.fontSize}`);
         showDebugInfo(`屏幕分辨率：${window.screen.width}x${window.screen.height}`);
+        if (window.ede.curEpOffset !== 0) showDebugInfo(`当前弹幕偏移：${window.ede.curEpOffset} 秒`);
 
         const waitForMediaContainer = async () => {
             while (!document.querySelector(mediaContainerQueryStr)) {
@@ -1249,7 +1268,7 @@
     }
 
     function danmakuParser(all_cmts) {
-        const { fontSize, danmakuFilter, danmakuModeFilter } = window.ede;
+        const { fontSize, danmakuFilter, danmakuModeFilter, curEpOffset } = window.ede;
 
         const disableBilibili = (danmakuFilter & 1) === 1;
         const disableGamer = (danmakuFilter & 2) === 2;
@@ -1295,7 +1314,7 @@
                 return {
                     text: comment.m,
                     mode,
-                    time,
+                    time: time + curEpOffset,
                     style: {
                         font: `${fontSize}px sans-serif`,
                         fillStyle: `#${color}`,
