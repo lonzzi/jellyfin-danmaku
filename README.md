@@ -83,13 +83,22 @@ sub_filter_once on;
 # 网站设置
 example.com {
     filter {
-        path .*/web/.*
+        path /web/.*
         search_pattern </body>
-        replacement "<script src=\"https://jellyfin-danmaku.pages.dev/ede.user.js\" defer></script></body>"
+        replacement "<script src=\"https://jellyfin-danmaku.pages.dev/ede.user.js?noCors=1\" defer></script></body>"
         content_type text/html
     }
-    reverse_proxy localhost:8096 {
+    reverse_proxy / localhost:8096 {
         header_up Accept-Encoding identity
+    }
+
+    reverse_proxy /ddplay-api/* https://api.dandanplay.net {
+        rewrite * /{path.1}
+    }
+    header /ddplay-api/* {
+        Access-Control-Allow-Origin "example.com"
+        Access-Control-Allow-Methods "GET, POST, OPTIONS"
+        Access-Control-Allow-Headers "Origin, Content-Type, Accept, Authorization"
     }
 }
 ```
