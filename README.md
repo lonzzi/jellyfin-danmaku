@@ -64,8 +64,26 @@
 
 ```conf
 proxy_set_header Accept-Encoding "";
-sub_filter '</body>' '<script src="https://jellyfin-danmaku.pages.dev/ede.user.js" defer></script></body>';
+sub_filter '</body>' '<script src="https://jellyfin-danmaku.pages.dev/ede.user.js?noCors=1" defer></script></body>';
 sub_filter_once on;
+```
+
+並加入一個新的 location 塊:
+```conf
+location /ddplay-api/ {
+    proxy_pass https://api.dandanplay.net/;
+    proxy_set_header Host $host;
+
+    add_header Access-Control-Allow-Origin "example.com";
+    add_header Access-Control-Allow-Methods "GET, POST, OPTIONS";
+    add_header Access-Control-Allow-Headers "Origin, Content-Type, Accept, Authorization";
+
+    if ($request_method = OPTIONS) {
+        add_header Content-Length 0;
+        add_header Content-Type text/plain;
+        return 204;
+    }
+}
 ```
 
 - [`完整示例`](https://github.com/Izumiko/jellyfin-danmaku/issues/8)
@@ -92,13 +110,12 @@ example.com {
         header_up Accept-Encoding identity
     }
 
-    reverse_proxy /ddplay-api/* https://api.dandanplay.net {
-        rewrite * /{path.1}
-    }
-    header /ddplay-api/* {
-        Access-Control-Allow-Origin "example.com"
-        Access-Control-Allow-Methods "GET, POST, OPTIONS"
-        Access-Control-Allow-Headers "Origin, Content-Type, Accept, Authorization"
+    handle_path /ddplay-api/* {
+        reverse_proxy https://api.dandanplay.net {
+            header_down Access-Control-Allow-Origin "example.com"
+            header_down Access-Control-Allow-Methods "GET, POST, OPTIONS"
+            header_down Access-Control-Allow-Headers "Origin, Content-Type, Accept, Authorization"
+        }
     }
 }
 ```
