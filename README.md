@@ -106,7 +106,7 @@ example.com {
         replacement "<script src=\"https://jellyfin-danmaku.pages.dev/ede.user.js?noCors=1\" defer></script></body>"
         content_type text/html
     }
-    reverse_proxy / localhost:8096 {
+    reverse_proxy localhost:8096 {
         header_up Accept-Encoding identity
     }
 
